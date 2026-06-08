@@ -7,9 +7,11 @@ import lombok.RequiredArgsConstructor;
 
 import com.portfolio.portfolio.dto.RegisterRequest;
 import com.portfolio.portfolio.dto.LoginRequest;
+import com.portfolio.portfolio.dto.AuthResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.portfolio.portfolio.security.JwtService;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +19,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public void register(RegisterRequest request) {
 
@@ -35,7 +38,7 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    public void authenticate(LoginRequest request) {
+    public AuthResponse authenticate(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -43,9 +46,10 @@ public class AuthService {
             throw new RuntimeException("Invalid password");
         
         }
+
+        String token = jwtService.generateToken(user);
+
+        return new AuthResponse(token, user.getId(), user.getEmail(), user.getUsername(), user.getRole());
     }
 
-    public void login(LoginRequest request) {
-        // Implement login logic here (e.g., authenticate user, generate JWT token, etc.)
-    }
 }

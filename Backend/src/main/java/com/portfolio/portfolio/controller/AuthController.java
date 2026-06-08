@@ -3,8 +3,9 @@ package com.portfolio.portfolio.controller;
 import com.portfolio.portfolio.dto.RegisterRequest;
 import com.portfolio.portfolio.dto.LoginRequest;
 import com.portfolio.portfolio.entity.User;
+import com.portfolio.portfolio.dto.AuthResponse;
 import com.portfolio.portfolio.service.AuthService;
-import com.portfolio.portfolio.security.JwtService;
+// import com.portfolio.portfolio.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-    private final JwtService jwtService;
+    // private final JwtService jwtService;
 
     @PostMapping("/register")
     public String register(
@@ -30,9 +31,8 @@ public class AuthController {
     public String login(
         @RequestBody LoginRequest request
     ) {
-        authService.authenticate(request);
-        String token = jwtService.generateToken(request.getEmail());
-        return token;
+        AuthResponse response = authService.authenticate(request);
+        return response.token();
     }
 
     
