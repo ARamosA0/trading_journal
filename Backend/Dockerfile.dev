@@ -1,0 +1,6 @@
+FROM maven:3.9-eclipse-temurin-21
+
+WORKDIR /app
+
+# Use the mounted source code and run in dev mode
+CMD ["mvn", "-f", "/app/pom.xml", "spring-boot:run"]
