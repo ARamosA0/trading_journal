@@ -1,17 +1,17 @@
 package com.portfolio.portfolio.service;
 
-import com.portfolio.portfolio.entity.*;
-import com.portfolio.portfolio.repository.UserRepository;
-
-import lombok.RequiredArgsConstructor;
-
-import com.portfolio.portfolio.dto.RegisterRequest;
-import com.portfolio.portfolio.dto.LoginRequest;
-import com.portfolio.portfolio.dto.AuthResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import com.github.f4b6a3.ulid.UlidCreator;
+import com.portfolio.portfolio.dto.AuthResponse;
+import com.portfolio.portfolio.dto.LoginRequest;
+import com.portfolio.portfolio.dto.RegisterRequest;
+import com.portfolio.portfolio.entity.User;
+import com.portfolio.portfolio.repository.UserRepository;
 import com.portfolio.portfolio.security.JwtService;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +25,7 @@ public class AuthService {
 
         User user = new User();
 
+        user.setId(UlidCreator.getUlid().toString());
         user.setUsername(request.getUserName());
 
         user.setEmail(request.getEmail());
