@@ -1,191 +1,39 @@
-import { useState, useEffect, useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { HeaderContext } from '../../hook/HeaderContext';
 
-type Account = {
-    id: number;
-    logo: string;
-    name: string;
-    type: string;
-    trades: number;
-    winRate: number;
-    balance: string;
-};
-
+type Account = { id: number; logo: string; name: string; type: string; trades: number; winRate: number; balance: string };
 const initialAccounts: Account[] = [
-    {
-        id: 1,
-        logo: 'SFx',
-        name: 'SimpleFx — Main',
-        type: 'Forex & CFDs · Personal',
-        trades: 86,
-        winRate: 72,
-        balance: '$32,480.00',
-    },
-    {
-        id: 2,
-        logo: 'Bg',
-        name: 'Bitget — Futures',
-        type: 'Crypto Derivatives · Personal',
-        trades: 38,
-        winRate: 61,
-        balance: '$15,872.80',
-    },
+  { id: 1, logo: 'SF', name: 'SimpleFx — Main', type: 'Forex & CFDs · Personal', trades: 86, winRate: 72, balance: '$32,480.00' },
+  { id: 2, logo: 'BG', name: 'Bitget — Futures', type: 'Crypto derivatives · Personal', trades: 38, winRate: 61, balance: '$15,872.80' },
 ];
 
 function Accounts() {
-    const { setHeader } = useContext(HeaderContext);
-    const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [form, setForm] = useState({ logo: '', name: '', type: '', trades: '', winRate: '', balance: '' });
+  const { setHeader } = useContext(HeaderContext);
+  const [accounts, setAccounts] = useState(initialAccounts);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState({ logo: '', name: '', type: '', trades: '', winRate: '', balance: '' });
 
-    useEffect(() => {
-        setHeader({
-            title: 'Accounts',
-            subtitle: 'Manage your broker and exchange accounts',
-            action: (
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-100 transition hover:bg-white/10"
-                >
-                    Add Account
-                </button>
-            ),
-        });
-    }, [setHeader]);
+  useEffect(() => { setHeader({ title: 'Accounts', subtitle: 'Keep balances and performance grouped by venue.', action: <button type="button" onClick={() => setIsModalOpen(true)}>Add account</button> }); }, [setHeader]);
+  const update = (field: keyof typeof form, value: string) => setForm((current) => ({ ...current, [field]: value }));
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    setAccounts((current) => [{ id: Date.now(), logo: form.logo.toUpperCase() || 'AC', name: form.name || 'New account', type: form.type || 'Personal', trades: Number(form.trades) || 0, winRate: Number(form.winRate) || 0, balance: form.balance || '$0.00' }, ...current]);
+    setIsModalOpen(false);
+    setForm({ logo: '', name: '', type: '', trades: '', winRate: '', balance: '' });
+  };
 
-    const openAddModal = () => {
-        setForm({ logo: '', name: '', type: '', trades: '', winRate: '', balance: '' });
-        setIsModalOpen(true);
-    };
+  return <section className="space-y-6">
+    <div className="flex items-end justify-between border-b border-[var(--border)] pb-5"><div><p className="text-sm font-medium text-[var(--text)]">Capital map</p><p className="mt-1 text-xs text-[var(--text3)]">{accounts.length} connected accounts · $48,352.80 tracked</p></div></div>
+    <div className="grid gap-px overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--border)] lg:grid-cols-2">
+      {accounts.map((account) => <article key={account.id} className="bg-[var(--surface)] p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-4"><div className="flex items-center gap-4"><div className="flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--border2)] bg-[var(--bg3)] text-xs font-bold tracking-wide text-[var(--accent)]">{account.logo}</div><div><h2 className="font-medium text-[var(--text)]">{account.name}</h2><p className="mt-1 text-xs text-[var(--text3)]">{account.type}</p></div></div><span className="journal-number text-lg font-semibold text-[var(--text)]">{account.balance}</span></div>
+        <div className="mt-8 grid grid-cols-2 gap-4 border-t border-[var(--border)] pt-4"><div><p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text3)]">Trades</p><p className="journal-number mt-1 text-sm text-[var(--text)]">{account.trades}</p></div><div><p className="text-[10px] uppercase tracking-[0.16em] text-[var(--text3)]">Win rate</p><p className="journal-number mt-1 text-sm text-[var(--green)]">{account.winRate}%</p></div></div>
+      </article>)}
+      <button type="button" onClick={() => setIsModalOpen(true)} className="flex min-h-44 items-center justify-center border-t border-dashed border-[var(--border2)] bg-[var(--surface)] p-6 text-center text-[var(--text2)] transition hover:bg-[var(--bg3)] lg:border-t-0 lg:border-l"><span><span className="block text-2xl font-light text-[var(--accent)]">+</span><span className="mt-2 block text-sm">Add another account</span><span className="mt-1 block text-xs text-[var(--text3)]">Connect a broker or exchange manually</span></span></button>
+    </div>
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const next: Account = {
-            id: Date.now(),
-            logo: form.logo || 'AC',
-            name: form.name || 'New Account',
-            type: form.type || 'Personal',
-            trades: Number(form.trades) || 0,
-            winRate: Number(form.winRate) || 0,
-            balance: form.balance || '$0.00',
-        };
-        setAccounts((s) => [next, ...s]);
-        setIsModalOpen(false);
-    };
-
-    return (
-        <div className="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-            <div className="grid gap-4 lg:grid-cols-2">
-                {accounts.map((acc) => (
-                    <div
-                        key={acc.id}
-                        className="flex items-center gap-6 overflow-hidden rounded-[16px] border border-[var(--border)] bg-[var(--bg2)] p-6 shadow-[var(--shadow)]"
-                    >
-                        <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 text-lg font-semibold text-slate-100">
-                            {acc.logo}
-                        </div>
-                        <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <div className="text-sm font-semibold text-slate-100">{acc.name}</div>
-                                    <div className="mt-1 text-xs text-slate-400">{acc.type}</div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-lg font-semibold text-emerald-300">{acc.balance}</div>
-                                </div>
-                            </div>
-
-                            <div className="mt-4 flex items-center gap-6 text-sm text-slate-400">
-                                <div>
-                                    <div className="text-xs">Trades</div>
-                                    <div className="mt-1 text-sm text-slate-100">{acc.trades}</div>
-                                </div>
-                                <div>
-                                    <div className="text-xs">Win Rate</div>
-                                    <div className="mt-1 text-sm text-slate-100">{acc.winRate}%</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-
-                {/* Add new account card */}
-                <button
-                    onClick={openAddModal}
-                    className="flex h-36 w-full items-center justify-center rounded-[16px] border-2 border-dashed border-[var(--border)] bg-[var(--bg2)] p-6 text-slate-400 transition hover:border-slate-500/30"
-                >
-                    <div className="text-center">
-                        <div className="mb-2 text-2xl">+</div>
-                        <div className="text-sm">Add New Account</div>
-                        <div className="mt-1 text-xs text-slate-500">SimpleFx, Bitget, and more</div>
-                    </div>
-                </button>
-            </div>
-
-            {/* Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/60" onClick={() => setIsModalOpen(false)} />
-                    <div className="relative w-full max-w-xl rounded-lg bg-[var(--bg3)] p-6 shadow-[var(--shadow)]">
-                        <h3 className="text-lg font-semibold text-slate-100">Add New Account</h3>
-                        <form onSubmit={handleSubmit} className="mt-4 grid gap-3">
-                            <div className="grid grid-cols-2 gap-3">
-                                <input
-                                    value={form.logo}
-                                    onChange={(e) => setForm({ ...form, logo: e.target.value })}
-                                    placeholder="Logo (short)"
-                                    className="rounded border border-[var(--border)] bg-[var(--bg2)] px-3 py-2 text-sm text-slate-100"
-                                />
-                                <input
-                                    value={form.name}
-                                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                    placeholder="Account name"
-                                    className="rounded border border-[var(--border)] bg-[var(--bg2)] px-3 py-2 text-sm text-slate-100"
-                                />
-                            </div>
-
-                            <input
-                                value={form.type}
-                                onChange={(e) => setForm({ ...form, type: e.target.value })}
-                                placeholder="Type / description"
-                                className="rounded border border-[var(--border)] bg-[var(--bg2)] px-3 py-2 text-sm text-slate-100"
-                            />
-
-                            <div className="grid grid-cols-3 gap-3">
-                                <input
-                                    value={form.trades}
-                                    onChange={(e) => setForm({ ...form, trades: e.target.value })}
-                                    placeholder="Trades"
-                                    className="rounded border border-[var(--border)] bg-[var(--bg2)] px-3 py-2 text-sm text-slate-100"
-                                />
-                                <input
-                                    value={form.winRate}
-                                    onChange={(e) => setForm({ ...form, winRate: e.target.value })}
-                                    placeholder="Win Rate %"
-                                    className="rounded border border-[var(--border)] bg-[var(--bg2)] px-3 py-2 text-sm text-slate-100"
-                                />
-                                <input
-                                    value={form.balance}
-                                    onChange={(e) => setForm({ ...form, balance: e.target.value })}
-                                    placeholder="Balance"
-                                    className="rounded border border-[var(--border)] bg-[var(--bg2)] px-3 py-2 text-sm text-slate-100"
-                                />
-                            </div>
-
-                            <div className="mt-4 flex justify-end gap-3">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="rounded px-4 py-2 text-sm text-slate-300">
-                                    Cancel
-                                </button>
-                                <button type="submit" className="rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500">
-                                    Add Account
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+    {isModalOpen && <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="account-dialog-title"><button type="button" aria-label="Close dialog" className="absolute inset-0 cursor-default bg-black/70" onClick={() => setIsModalOpen(false)} /><form onSubmit={handleSubmit} className="relative w-full max-w-lg rounded-xl border border-[var(--border2)] bg-[var(--surface)] p-6 shadow-2xl"><div className="flex items-start justify-between"><div><p className="text-[10px] uppercase tracking-[0.2em] text-[var(--accent)]">Workspace</p><h2 id="account-dialog-title" className="mt-2 text-xl font-semibold text-[var(--text)]">Add account</h2></div><button type="button" aria-label="Close dialog" onClick={() => setIsModalOpen(false)} className="text-xl text-[var(--text3)] hover:text-[var(--text)]">×</button></div><div className="mt-6 grid gap-4 sm:grid-cols-2"><label className="text-xs text-[var(--text2)]">Short code<input required value={form.logo} onChange={(event) => update('logo', event.target.value)} placeholder="e.g. BG" className="mt-2" /></label><label className="text-xs text-[var(--text2)]">Account name<input required value={form.name} onChange={(event) => update('name', event.target.value)} placeholder="Broker — account" className="mt-2" /></label><label className="text-xs text-[var(--text2)] sm:col-span-2">Type / description<input value={form.type} onChange={(event) => update('type', event.target.value)} placeholder="Forex · Personal" className="mt-2" /></label><label className="text-xs text-[var(--text2)]">Trades<input type="number" min="0" value={form.trades} onChange={(event) => update('trades', event.target.value)} placeholder="0" className="mt-2" /></label><label className="text-xs text-[var(--text2)]">Win rate %<input type="number" min="0" max="100" value={form.winRate} onChange={(event) => update('winRate', event.target.value)} placeholder="0" className="mt-2" /></label><label className="text-xs text-[var(--text2)] sm:col-span-2">Balance<input value={form.balance} onChange={(event) => update('balance', event.target.value)} placeholder="$0.00" className="mt-2" /></label></div><div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setIsModalOpen(false)} className="rounded-lg px-4 py-2 text-sm text-[var(--text2)] hover:text-[var(--text)]">Cancel</button><button type="submit" className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[#061016]">Add account</button></div></form></div>}
+  </section>;
 }
 
 export default Accounts;

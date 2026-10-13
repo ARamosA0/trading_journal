@@ -20,20 +20,22 @@ const widthMap = {
     xl: "sm:w-250",
 };
 
-const textPosition = {
+const textPosition: Record<number, string> = {
     1: "text-left",
     2: "text-center",
     3: "text-right",
 }
 
 function Card (card: CardProps) {
+    const alignment = textPosition[card.descriptionVersion ?? 1] || textPosition[1];
+    const width = widthMap[card.width ?? "lg"] || widthMap.lg;
 
     return (
         <div className={`
             flex flex-col 
-            ${textPosition[card.descriptionVersion] || textPosition[1]}
+            ${alignment}
             w-full 
-            ${widthMap[card.width] || widthMap["lg"]}
+            ${width}
             py-6
             h-${card.high || "50"}
             rounded-lg

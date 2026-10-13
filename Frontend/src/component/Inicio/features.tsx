@@ -1,4 +1,3 @@
-import {useState} from 'react'
 import Card from '../reusable/card'
 
 import graphic from "../../assets/icons/hero.png"
@@ -10,7 +9,7 @@ import money from "../../assets/icons/money.png"
 
 function Features () {
 
-    const [features, setFeatures] = useState([
+    const features = [
         {
             title: "Trade Journal",
             description: "Log every trade with detailed parameters, notes, screenshots, and emotional state tracking. Full history at your fingertips.",
@@ -41,9 +40,9 @@ function Features () {
             description: "Create and backtest your strategies against historical data. Validate your edge before risking real capital.",
             icon: micro
         },
-    ])
+    ]
 
-    const [items, setItems] = useState([
+    const items = [
         {
             title: "Dashboard",
             img:""
@@ -60,7 +59,7 @@ function Features () {
             title: "Tools",
             img:""
         },
-    ])
+    ]
 
     return (
         <>

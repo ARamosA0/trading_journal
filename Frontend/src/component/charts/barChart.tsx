@@ -1,15 +1,6 @@
-import { useState } from 'react'
 import ReactECharts from "echarts-for-react";
 
-type BarChartOption = {
-    title: any,
-    tooltip: any,
-    xAxis: any,
-    yAxis: any,
-    series: any
-}
-
-function BarChart( data: any ) {
+function BarChart({ option }: { option: Record<string, unknown> }) {
     // const option = {
     //     title: {
     //         text: "Trades por Mes",
@@ -27,12 +18,10 @@ function BarChart( data: any ) {
     //         },
     //     ],
     // };
-    console.log('DATA',data)
-
     return (
         <>
             <ReactECharts
-                option={data}
+                option={option}
                 style={{ height: 400 }}
             />
         </>

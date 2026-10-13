@@ -1,7 +1,49 @@
-import { Link } from "react-router-dom";
+import {useState} from "react"
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getApiErrorMessage, loginAuth } from "../api/auth"
+import { useAuth } from "../authContext/context";
 
 function Login() {
 
+    const [userLogin, setUserLogin] = useState({
+        email: "",
+        password: ""
+    })
+    const [error, setError] = useState("");
+
+    const { login } = useAuth()
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const {name, value} = e.target;
+        setUserLogin(prev => ({
+            ...prev,
+            [name]: value
+        }))
+    }
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setError("");
+
+        try {
+            const response = await loginAuth({
+                email: userLogin.email,
+                password: userLogin.password
+            });
+
+            login(response.token, {
+                userName: response.userName,
+                email: response.email,
+                role: response.rol
+            })
+            const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
+            navigate(from || "/dashboard", { replace: true });
+        } catch(error) {
+            setError(getApiErrorMessage(error, "El correo o la contraseña son incorrectos"));
+        }
+    }
     
     return (
         <>  
@@ -26,13 +68,16 @@ function Login() {
                 </div>
 
                 {/* Form */}
-                <form className="space-y-5">
+                <form className="space-y-5" onSubmit={handleSubmit}>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email
                     </label>
                     <input
                     type="email"
+                    name="email"
+                    value={userLogin.email}
+                    onChange={handleChange}
                     placeholder="Enter your email"
                     className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
@@ -44,6 +89,9 @@ function Login() {
                     </label>
                     <input
                     type="password"
+                    name="password"
+                    value={userLogin.password}
+                    onChange={handleChange}
                     placeholder="Enter your password"
                     className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
@@ -60,20 +108,15 @@ function Login() {
                     </a>
                 </div>
 
-                {/* <button
+                 <button
                     type="submit"
                     className="w-full font-medium px-6 py-3 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg text-bg"
                     style={{ background: "var(--gradient)" }}
                     >
-                    Login
-                </button> */}
-                <Link
-                    to="/dashboard"
-                    className="w-full font-medium px-6 py-3 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg text-bg"
-                    style={{ background: "var(--gradient)" }}
-                    >
-                    Login
-                </Link>
+                     Login
+                 </button>
+
+                 {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
 
                 <div className="flex items-center gap-4">
                     <div className="flex-1 h-px bg-gray-300"></div>

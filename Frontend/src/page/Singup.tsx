@@ -1,5 +1,47 @@
+import { useState } from "react"
 import  {Link} from "react-router-dom";
+import {getApiErrorMessage, register} from "../api/auth"
+
 function Signup() {
+
+    const [userRegister, setUserRegister] = useState({
+        userName: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+    })
+    const [error, setError] = useState('')
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const {name, value} = e.target;
+        setUserRegister(prev => ({
+            ...prev,
+            [name]: value
+        }))
+    }
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setError('')
+        
+        if (userRegister.password !== userRegister.confirmPassword) {
+            setError("Las contraseñas no coinciden")
+            return
+        }
+
+        console.log(userRegister)
+
+        try {
+            await register({
+                userName: userRegister.userName,
+                email: userRegister.email,
+                password: userRegister.password
+            });
+        } catch(error) {
+            setError(getApiErrorMessage(error, "No se pudo crear la cuenta"))
+        }
+    }
+
 
     return (
         <>  
@@ -29,13 +71,16 @@ function Signup() {
                     </div>
 
                     {/* Form */}
-                    <form className="space-y-5">
+                    <form className="space-y-5" onSubmit={handleSubmit}>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                         Username
                         </label>
                         <input
                         type="text"
+                        name="userName"
+                        value={userRegister.userName}
+                        onChange={handleChange}
                         placeholder="Enter your username"
                         className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
@@ -47,6 +92,9 @@ function Signup() {
                         </label>
                         <input
                         type="email"
+                        name="email"
+                        value={userRegister.email}
+                        onChange={handleChange}
                         placeholder="Enter your email"
                         className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
@@ -58,9 +106,14 @@ function Signup() {
                         </label>
                         <input
                         type="password"
+                        name="password"
+                        value={userRegister.password}
+                        onChange={handleChange}
+                        minLength={8}
                         placeholder="Create a password"
                         className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
+                        <p className="mt-1 text-xs text-gray-500">Mínimo 8 caracteres, con mayúscula, minúscula y número.</p>
                     </div>
 
                     <div>
@@ -69,6 +122,9 @@ function Signup() {
                         </label>
                         <input
                         type="password"
+                        name="confirmPassword"
+                        value={userRegister.confirmPassword}
+                        onChange={handleChange}
                         placeholder="Confirm your password"
                         className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
@@ -81,6 +137,8 @@ function Signup() {
                     >
                         Sign Up
                     </button>
+
+                    {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
 
                     <div className="flex items-center gap-4">
                         <div className="flex-1 h-px bg-gray-300"></div>

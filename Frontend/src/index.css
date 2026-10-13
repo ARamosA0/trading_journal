@@ -14,9 +14,8 @@
   --gold:#f59e0b;--gold2:#fbbf24;--gold-dim:rgba(245,158,11,.15);
   --radius:10px;--radius-lg:16px;--radius-xl:24px;
   --shadow:0 4px 24px rgba(0,0,0,.5);
-  --font:'Outfit',sans-serif;--mono:'JetBrains Mono',monospace;
-  --gradient:linear-gradient(135deg,#8b5cf6,#06b6d4);
-  --gradient2:linear-gradient(135deg,#f43f5e,#f59e0b);
+  --font:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
 }
 @theme {
   --color-bg: var(--bg);
@@ -46,6 +45,22 @@ img{max-width:100%;display:block}
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+.journal-header-action{display:inline-flex;align-items:center;justify-content:center;border-radius:8px;padding:.65rem 1rem;font-size:.8rem;font-weight:600;transition:background-color .2s,border-color .2s,color .2s}
+.journal-header-action button{font:inherit;color:inherit;background:transparent;border:0;padding:0}
+.journal-header-action-primary{border:1px solid var(--accent);background:var(--accent);color:#061016}
+.journal-header-action-primary:hover{background:#22d3ee;border-color:#22d3ee}
+.journal-header-action-secondary{border:1px solid var(--border2);background:var(--surface);color:var(--text2)}
+.journal-header-action-secondary:hover{border-color:var(--text3);color:var(--text)}
+.journal-number{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.journal-panel{border:1px solid var(--border);background:var(--surface);border-radius:12px}
+.journal-table th{font-size:.68rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.journal-table td,.journal-table th{border-bottom:1px solid var(--border);padding:1rem 1.1rem}
+.journal-table tbody tr:last-child td{border-bottom:0}
+.journal-table tbody tr:hover{background:rgba(255,255,255,.025)}
+@media (max-width:767px){
+  .journal-table{min-width:720px}
+}
 
 .pie-mock{width:160px;height:160px;border-radius:50%;background:conic-gradient(var(--green) 0% 42%,var(--red) 42% 58%,var(--primary) 58% 78%,var(--blue) 78% 100%);position:relative}
 .pie-mock::after{content:'';position:absolute;inset:30px;border-radius:50%;background:var(--bg)}
