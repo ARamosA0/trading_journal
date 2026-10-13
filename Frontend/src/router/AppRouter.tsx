@@ -9,6 +9,7 @@ import Accounts from "../page/journal/Accounts";
 import Dashboard from "../page/journal/Dashboard";
 import OpenTrades from "../page/journal/OpenTrades";
 import Tools from "../page/journal/Tools";
+import RequireAuth from "./RequireAuth";
 
 export default function AppRouter() {
     return (
@@ -17,13 +18,15 @@ export default function AppRouter() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Singup />} />
 
-                <Route element={<JournalLayout />}>
-                    <Route path="/journal" element={<Journal />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/accounts" element={<Accounts />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/opentrades" element={<OpenTrades />} />
-                    <Route path="/tools" element={<Tools />} />
+                <Route element={<RequireAuth/>}>
+                    <Route element={<JournalLayout />}>
+                        <Route path="/journal" element={<Journal />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/accounts" element={<Accounts />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/opentrades" element={<OpenTrades />} />
+                        <Route path="/tools" element={<Tools />} />
+                    </Route>
                 </Route>
             </Routes>
     )

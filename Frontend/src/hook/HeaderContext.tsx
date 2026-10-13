@@ -1,12 +1,15 @@
 import { createContext } from 'react';
+import type { ReactNode } from 'react';
 
 export type HeaderType = {
   title: string;
   subtitle: string;
-  action?: any;
-  action2?: any;
+  action?: ReactNode;
+  action2?: ReactNode;
 };
 
+// This file intentionally exports the context used by the journal shell.
+// eslint-disable-next-line react-refresh/only-export-components
 export const HeaderContext = createContext<{
   header: HeaderType;
   setHeader: (h: HeaderType) => void;

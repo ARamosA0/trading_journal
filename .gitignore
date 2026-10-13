@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Frontend builds and local Vite files
+Frontend/dist/
+Frontend/dist-ssr/
+Frontend/.vite/
+
+# Backend builds and Maven wrapper cache
+Backend/target/
+Backend/.mvn/wrapper/maven-wrapper.jar
+
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+application-local.properties
+application-*.local.properties
+
+# Logs and runtime files
+*.log
+logs/
+*.pid
+
+# IDEs and editor files
+.idea/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+.vscode/*
+!.vscode/extensions.json
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Coverage and test reports
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo

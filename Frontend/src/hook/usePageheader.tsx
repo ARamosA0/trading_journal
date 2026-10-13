@@ -1,7 +1,8 @@
 import { useContext, useEffect } from 'react';
 import { HeaderContext } from "./HeaderContext";
+import type { HeaderType } from "./HeaderContext";
 
-export function usePageHeader(config) {
+export function usePageHeader(config: HeaderType) {
     const { setHeader } = useContext(HeaderContext);
 
     useEffect(() => {
@@ -14,5 +15,5 @@ export function usePageHeader(config) {
                 action: null,
                 action2:null
             });
-    }, []);
+    }, [config, setHeader]);
 }

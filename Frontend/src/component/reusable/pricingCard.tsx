@@ -1,12 +1,3 @@
-type PricingCardProps = {
-    title: string;
-    description?: string;
-    price: string;
-    features: string[];
-    btn: string;
-    isUsed: boolean;
-    img: string;
-}
 function PricingCard() {
     return (
         <>

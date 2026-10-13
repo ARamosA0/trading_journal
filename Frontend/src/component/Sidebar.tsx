@@ -1,8 +1,16 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../authContext/context";
 
-export default function Sidebar() {
+type SidebarProps = {
+    isOpen?: boolean;
+    onClose?: () => void;
+};
+
+export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     const [collapsed, setCollapsed] = useState(false);
+    const navigate = useNavigate();
+    const { logout } = useAuth();
     // const [isSelected, setIsSelected] = useState(false);
     const [itemsMain, setItemsMain] = useState([
         {
@@ -25,7 +33,7 @@ export default function Sidebar() {
         },
     ])
 
-    const [itemsManage, setItemsManage] = useState([
+    const itemsManage = [
         {
             name: "Account",
             isSelected: false,
@@ -38,9 +46,9 @@ export default function Sidebar() {
             href: "/tools",
             icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
         }
-    ])
+    ]
 
-    const [itemsAccount, setItemsAccount] = useState([
+    const itemsAccount = [
         {
             name: "Profile",
             isSelected: false,
@@ -53,22 +61,25 @@ export default function Sidebar() {
             href: "/logout",
             icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         },
-    ])
+    ]
 
-    // const setItem = (item: any) => {
-    //     if (!item.isSelected) {
-    //         setItemsManage()
-    //     }
-    // }
+
+    const handleNavigation = () => onClose?.();
 
     return (
-        <aside className={`h-screen bg-[var(--bg2)] border-r border-[var(--border2)] shadow-sm transition-all duration-200 flex flex-col ${collapsed ? 'w-16' : 'w-64'}`}>
-            <div className="flex items-center justify-between p-3 border-b border-[var(--border2)]">
-                <h3 className={`text-lg font-semibold ${collapsed ? 'hidden' : 'block'}`}>KyroTrade</h3>
+        <>
+            {isOpen && <button type="button" aria-label="Close navigation" onClick={onClose} className="fixed inset-0 z-30 bg-black/60 md:hidden" />}
+            <aside className={`fixed inset-y-0 left-0 z-40 flex h-screen w-72 flex-col border-r border-[var(--border)] bg-[var(--surface)] transition-transform duration-200 md:sticky md:top-0 md:z-0 md:h-screen md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${collapsed ? 'md:w-20' : 'md:w-64'}`}>
+            <div className="flex items-center justify-between border-b border-[var(--border)] p-5">
+                <div className={`${collapsed ? 'md:hidden' : 'block'}`}>
+                    <p className="text-sm font-semibold tracking-[0.08em] text-[var(--text)]">KYROTRADE</p>
+                    <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-[var(--text3)]">Performance desk</p>
+                </div>
+                <button type="button" aria-label="Close navigation" onClick={onClose} className="rounded-md p-1 text-[var(--text3)] hover:bg-[var(--bg3)] md:hidden">×</button>
                 <button
                     aria-label="Toggle sidebar"
                     onClick={() => setCollapsed(!collapsed)}
-                    className="p-1 rounded hover:bg-[var(--bg3)]"
+                    className="hidden rounded p-1 text-[var(--text3)] hover:bg-[var(--bg3)] md:block"
                 >
                     <svg
                         className={`w-5 h-5 transform transition-transform ${collapsed ? '' : 'rotate-180'} text-[var(--text3)]`}
@@ -81,14 +92,15 @@ export default function Sidebar() {
                 </button>
             </div>
 
-            <div className="flex-1 overflow-auto p-3">
+            <div className="flex-1 overflow-auto p-4">
                 <div className="mb-6">
-                    <p className={`text-xs font-semibold text-gray-500 mb-2 ${collapsed ? 'hidden' : 'block'}`}>MAIN</p>
+                    <p className={`mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text3)] ${collapsed ? 'md:hidden' : 'block'}`}>Workspace</p>
                     <nav className="space-y-1">
                         {itemsMain.map((item, key) => (
                             <Link 
                             to={item.href} key={key} 
                                 onClick={() => {
+                                    handleNavigation();
                                     setItemsMain(prev =>
                                         prev.map(i => ({
                                             ...i,
@@ -96,22 +108,23 @@ export default function Sidebar() {
                                         }))
                                     );
                                 }}
-                                className={`flex items-center space-x-3 text-sm hover:bg-[var(--bg3)] rounded p-2 ${item.isSelected ? 'text-[var(--purple)]': ''} ${item.isSelected ? 'bg-[var(--primary-dim)]': ''}`}>
+                                className={`flex items-center gap-3 rounded-lg border-l-2 p-3 text-sm transition ${item.isSelected ? 'border-[var(--accent)] bg-[var(--accent-dim)] text-[var(--text)]' : 'border-transparent text-[var(--text2)] hover:bg-[var(--bg3)] hover:text-[var(--text)]'}`}>
                                 <span className="inline-block w-6 h-6 flex items-center justify-center flex-shrink-0">
                                     {item.icon}
                                 </span>
-                                <span className={`${collapsed ? 'hidden' : ''} text-[var(--text2)]`}>{item.name}</span>
+                                <span className={`${collapsed ? 'md:hidden' : ''}`}>{item.name}</span>
                             </Link>
                         ))}
                     </nav>
                 </div>
 
                 <div>
-                    <p className={`text-xs font-semibold text-gray-500 mb-2 ${collapsed ? 'hidden' : 'block'}`}>MANAGE</p>
+                    <p className={`mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text3)] ${collapsed ? 'md:hidden' : 'block'}`}>Manage</p>
                     <nav className="space-y-1">
                         {itemsManage.map((item, key) => (
                             <Link to={item.href} key={key}
                                 onClick={() => {
+                                    handleNavigation();
                                     setItemsMain(prev =>
                                         prev.map(i => ({
                                             ...i,
@@ -119,20 +132,40 @@ export default function Sidebar() {
                                         }))
                                     );
                                 }}
-                                className={`flex items-center space-x-3 text-sm hover:bg-[var(--bg3)] rounded p-2 ${item.isSelected ? 'text-[var(--purple)]': ''} ${item.isSelected ? 'bg-[var(--primary-dim)]': ''}`}>
+                                className="flex items-center gap-3 rounded-lg border-l-2 border-transparent p-3 text-sm text-[var(--text2)] transition hover:bg-[var(--bg3)] hover:text-[var(--text)]">
                                 <span className="inline-block w-6 h-6 flex items-center justify-center flex-shrink-0">
                                     {item.icon}
                                 </span>
-                                <span className={`${collapsed ? 'hidden' : ''} text-[var(--text2)]`}>{item.name}</span>
+                                <span className={`${collapsed ? 'md:hidden' : ''}`}>{item.name}</span>
                             </Link>
                         ))}
                     </nav>
                 </div>
             </div>
 
-            <div className="p-3 border-t border-[var(border2)]">
+            <div className="border-t border-[var(--border)] p-4">
                 <div className="space-y-1">
-                        {itemsAccount.map((item, key) => (
+                        {itemsAccount.map((item, key) => item.href === "/logout" ? (
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    handleNavigation();
+                                    try {
+                                        await logout();
+                                    } catch {
+                                        // The local session must still be cleared if the server is unavailable.
+                                    }
+                                    navigate("/", { replace: true });
+                                }}
+                                key={key}
+                                className="flex w-full items-center gap-3 rounded-lg border-l-2 border-transparent p-3 text-sm text-[var(--text2)] transition hover:bg-[var(--red-dim)] hover:text-[var(--text)]"
+                            >
+                                <span className="inline-block w-6 h-6 flex items-center justify-center flex-shrink-0">
+                                    {item.icon}
+                                </span>
+                                <span className={`${collapsed ? 'md:hidden' : ''}`}>{item.name}</span>
+                            </button>
+                        ) : (
                             <Link to={item.href}
                                 onClick={() => {
                                     setItemsMain(prev =>
@@ -142,7 +175,7 @@ export default function Sidebar() {
                                         }))
                                     );
                                 }}
-                                key={key} 
+                                key={key}
                                 className={`flex items-center space-x-3 text-sm hover:bg-[var(--bg3)] rounded p-2 ${item.isSelected ? 'text-[var(--purple)]': ''} ${item.isSelected ? 'bg-[var(--primary-dim)]': ''}`}>
                                 <span className="inline-block w-6 h-6 flex items-center justify-center flex-shrink-0">
                                     {item.icon}
@@ -158,6 +191,7 @@ export default function Sidebar() {
                     </button> */}
                 </div>
             </div>
-        </aside>
+            </aside>
+        </>
     );
 }

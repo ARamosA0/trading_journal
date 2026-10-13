@@ -1,34 +1,42 @@
+import type { ReactNode } from 'react';
+
+type PageHeaderProps = {
+    title: string;
+    subtitle: string;
+    action?: ReactNode;
+    action2?: ReactNode;
+};
+
 function PageHeader({
     title,
     subtitle,
     action,
     action2
-}) {
+}: PageHeaderProps) {
     return (
         <>
-            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="mb-8 flex flex-col gap-5 border-b border-[var(--border)] pb-6 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-[var(--text)]">
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Trading journal</p>
+                    <h1 className="text-3xl font-semibold tracking-[-0.03em] text-[var(--text)] sm:text-4xl">
                         {title}
                     </h1>
 
                     {subtitle && (
-                        <p className="text-[var(--text2)]">
+                        <p className="mt-2 max-w-xl text-sm text-[var(--text2)]">
                             {subtitle}
                         </p>
                     )}
                 </div>
 
-                <div className="flex flex-row">
+                <div className="flex flex-wrap items-center gap-2">
                     {action2 && (
-                        <div className="border border[var(--border)] px-4 py-2 rounded-lg">
+                        <div className="journal-header-action journal-header-action-secondary">
                             {action2}
                         </div>
                     )}
                     {action && (
-                        <div className="px-4 py-2 rounded-lg"
-                            style={{ background: 'var(--gradient)' }}
-                        >
+                        <div className="journal-header-action journal-header-action-primary">
                             {action}
                         </div>
                     )}

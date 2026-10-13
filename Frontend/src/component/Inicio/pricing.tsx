@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Card from "../reusable/card";
 import { PaypalIcon } from "../reusable/paypalIcon";
 import { CoffeIcon } from "../reusable/coffeIcon";
@@ -6,7 +5,7 @@ import { CriptoIcon } from "../reusable/cryptoIcon";
 
 
 function Pricing () {
-    const [suport, setSuport] = useState([
+    const suport = [
         {
             title: "PayPal",
             description: "Fast and secure payment with your PayPal account",
@@ -28,7 +27,7 @@ function Pricing () {
             btntext: "View Addresses",
             titleversion: 1
         },
-    ])
+    ]
     return (
         <>
             <section id="pricing" className="flex flex-col gap-4 items-center justify-center text-center py-20 px-4 sm:px-6 lg:px-8 mt-10">

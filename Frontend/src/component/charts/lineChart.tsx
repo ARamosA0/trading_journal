@@ -1,17 +1,17 @@
-import { useState } from 'react'
 import ReactECharts from "echarts-for-react";
 
 type ChartData = {
     dataX: string[],
-    dataY: number[]
+    dataY: number[],
+    title?: string
 }
 
-function LineChart( {dataX, dataY}: ChartData  ) {
+function LineChart( {dataX, dataY, title}: ChartData  ) {
     const option = {
     backgroundColor: "transparent",
 
     title: {
-        text: "Trades por Mes",
+        text: title ?? "",
         left: "center",
         textStyle: {
             color: "#E5E7EB",
@@ -93,23 +93,7 @@ function LineChart( {dataX, dataY}: ChartData  ) {
             },
 
             areaStyle: {
-                color: {
-                    type: "linear",
-                    x: 0,
-                    y: 0,
-                    x2: 0,
-                    y2: 1,
-                    colorStops: [
-                        {
-                            offset: 0,
-                            color: "rgba(124,58,237,.45)",
-                        },
-                        {
-                            offset: 1,
-                            color: "rgba(124,58,237,0)",
-                        },
-                    ],
-                },
+                    color: "rgba(34,211,238,.08)",
             },
 
             emphasis: {

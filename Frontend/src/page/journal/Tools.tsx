@@ -1,110 +1,25 @@
-import { useState, useEffect, useContext } from 'react';
-import { HeaderContext } from "../../hook/HeaderContext";
+import { useContext, useEffect } from 'react';
+import { HeaderContext } from '../../hook/HeaderContext';
 
-type Alert = {
-    instrument: string;
-    type: 'Above' | 'Below';
-    price: string;
-    current: string;
-    status: 'Active' | 'Paused' | 'Triggered';
-};
+type Alert = { instrument: string; type: 'Above' | 'Below'; price: string; current: string; status: 'Active' | 'Paused' | 'Triggered' };
+const alerts: Alert[] = [
+  { instrument: 'BTC/USDT', type: 'Above', price: '70,000.00', current: '68,162.20', status: 'Active' },
+  { instrument: 'EUR/USD', type: 'Below', price: '1.08200', current: '1.08815', status: 'Active' },
+  { instrument: 'XAU/USD', type: 'Above', price: '2,400.00', current: '2,358.80', status: 'Active' },
+];
 
-function TypeBadge({ t }: { t: Alert['type'] }) {
-    return (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${t === 'Above' ? 'bg-green-700 text-green-200' : 'bg-rose-700 text-rose-200'}`}>
-            {t}
-        </span>
-    );
+function Tools() {
+  const { setHeader } = useContext(HeaderContext);
+  useEffect(() => { setHeader({ title: 'Tools', subtitle: 'Small utilities for better decisions, not more noise.' }); }, [setHeader]);
+  const tools = [
+    { code: '01', title: 'Price alerts', description: 'Watch key levels and get notified when price crosses them.' },
+    { code: '02', title: 'Position calculator', description: 'Size a trade from balance, risk percentage and stop distance.' },
+    { code: '03', title: 'Strategy backtester', description: 'Validate an edge against historical data before going live.' },
+  ];
+  return <section className="space-y-8">
+    <div className="grid gap-px overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--border)] md:grid-cols-3">{tools.map((tool) => <button key={tool.code} type="button" className="group bg-[var(--surface)] p-5 text-left transition hover:bg-[var(--bg3)]"><span className="journal-number text-xs text-[var(--accent)]">{tool.code}</span><h2 className="mt-8 text-base font-semibold text-[var(--text)]">{tool.title}<span className="ml-2 text-[var(--text3)] transition group-hover:text-[var(--accent)]">→</span></h2><p className="mt-2 text-sm leading-6 text-[var(--text3)]">{tool.description}</p></button>)}</div>
+    <div><div className="mb-4 flex items-end justify-between"><div><h2 className="text-base font-semibold text-[var(--text)]">Active alerts</h2><p className="mt-1 text-xs text-[var(--text3)]">Levels currently being monitored.</p></div><span className="rounded-md bg-[var(--accent-dim)] px-2 py-1 text-xs text-[var(--accent)]">{alerts.length} active</span></div><div className="journal-panel overflow-x-auto"><table className="journal-table min-w-[620px] w-full border-separate border-spacing-0 text-left text-sm"><caption className="sr-only">Active price alerts</caption><thead className="bg-[var(--bg3)]"><tr><th>Instrument</th><th>Condition</th><th>Target</th><th>Current</th><th>Status</th></tr></thead><tbody>{alerts.map((alert) => <tr key={alert.instrument}><td className="font-semibold text-[var(--text)]">{alert.instrument}</td><td><span className={`rounded-md px-2 py-1 text-xs font-semibold ${alert.type === 'Above' ? 'bg-[var(--green-dim)] text-[var(--green)]' : 'bg-[var(--red-dim)] text-[var(--red)]'}`}>{alert.type}</span></td><td className="journal-number">{alert.price}</td><td className="journal-number">{alert.current}</td><td><span className="rounded-md bg-[var(--accent-dim)] px-2 py-1 text-xs font-semibold text-[var(--accent)]">{alert.status}</span></td></tr>)}</tbody></table></div></div>
+  </section>;
 }
 
-function StatusBadge({ s }: { s: Alert['status'] }) {
-    return (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${s === 'Active' ? 'bg-sky-800 text-sky-200' : s === 'Paused' ? 'bg-amber-800 text-amber-200' : 'bg-violet-800 text-violet-200'}`}>
-            {s}
-        </span>
-    );
-}
-
-export default function Tools() {
-    const { setHeader } = useContext(HeaderContext);
-
-    useEffect(() => {
-        setHeader({
-            title: 'Tools',
-            subtitle: 'Utilities',
-        });
-    }, []);
-
-    const [alerts] = useState<Alert[]>([
-        { instrument: 'BTC/USDT', type: 'Above', price: '70,000.00', current: '68,162.20', status: 'Active' },
-        { instrument: 'EUR/USD', type: 'Below', price: '1.08200', current: '1.08815', status: 'Active' },
-        { instrument: 'XAU/USD', type: 'Above', price: '2,400.00', current: '2,358.80', status: 'Active' },
-    ]);
-
-    return (
-        <div className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-3">
-                <div className="p-6 rounded-lg shadow-sm" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
-                    <div className="flex flex-col items-center text-center">
-                        <div className="w-14 h-14 rounded-xl bg-purple-800 flex items-center justify-center mb-4">
-                            <span className="text-2xl">🔔</span>
-                        </div>
-                        <h3 className="font-semibold mb-2">Price Alerts</h3>
-                        <p className="text-sm text-slate-300 mb-4">Set custom price alerts for any instrument. Get notified via push or email when levels are hit.</p>
-                        <button className="px-4 py-2 rounded-full border text-sm" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>Open Alerts</button>
-                    </div>
-                </div>
-
-                <div className="p-6 rounded-lg shadow-sm" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
-                    <div className="flex flex-col items-center text-center">
-                        <div className="w-14 h-14 rounded-xl bg-emerald-800 flex items-center justify-center mb-4">
-                            <span className="text-2xl">📐</span>
-                        </div>
-                        <h3 className="font-semibold mb-2">Position Calculator</h3>
-                        <p className="text-sm text-slate-300 mb-4">Calculate your optimal position size based on account balance, risk %, and stop loss distance.</p>
-                        <button className="px-4 py-2 rounded-full border text-sm" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>Open Calculator</button>
-                    </div>
-                </div>
-
-                <div className="p-6 rounded-lg shadow-sm" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
-                    <div className="flex flex-col items-center text-center">
-                        <div className="w-14 h-14 rounded-xl bg-indigo-800 flex items-center justify-center mb-4">
-                            <span className="text-2xl">🧪</span>
-                        </div>
-                        <h3 className="font-semibold mb-2">Strategy Backtester</h3>
-                        <p className="text-sm text-slate-300 mb-4">Create strategies and test them against historical data. Validate your edge before going live.</p>
-                        <button className="px-4 py-2 rounded-full border text-sm" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>Open Backtester</button>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <h4 className="text-lg font-semibold mb-3">Active Alerts</h4>
-                <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--border)', background: 'var(--bg2)' }}>
-                    <table className="w-full table-auto">
-                        <thead>
-                            <tr className="text-left text-xs text-slate-400">
-                                <th className="px-6 py-4">INSTRUMENT</th>
-                                <th className="px-6 py-4">TYPE</th>
-                                <th className="px-6 py-4">PRICE</th>
-                                <th className="px-6 py-4">CURRENT</th>
-                                <th className="px-6 py-4">STATUS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {alerts.map((a) => (
-                                <tr key={a.instrument} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                                    <td className="px-6 py-4 font-medium">{a.instrument}</td>
-                                    <td className="px-6 py-4"><TypeBadge t={a.type} /></td>
-                                    <td className="px-6 py-4 text-slate-300">{a.price}</td>
-                                    <td className="px-6 py-4 text-slate-300">{a.current}</td>
-                                    <td className="px-6 py-4"><StatusBadge s={a.status} /></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    );
-}
+export default Tools;

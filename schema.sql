@@ -13,9 +13,9 @@ CREATE TYPE trade_state AS ENUM (
 
 CREATE TABLE users (
     id CHAR(26) PRIMARY KEY,
-    email VARCHAR(250),
-    password VARCHAR(250),
-    username VARCHAR(250)
+    email VARCHAR(250) NOT NULL UNIQUE,
+    password VARCHAR(250) NOT NULL,
+    username VARCHAR(250) NOT NULL UNIQUE
 );
 
 CREATE TABLE account (
