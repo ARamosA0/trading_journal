@@ -1,5 +1,6 @@
 import { useContext, useEffect } from 'react';
 import { HeaderContext } from '../../hook/HeaderContext';
+import NewTradeDialog from '../../component/journal/NewTradeDialog';
 
 type OpenTrade = { id: number; pair: string; side: 'Long' | 'Short'; entry: string; current: string; size: string; pnl: string; pnlPercent: string; duration: string; account: string };
 const trades: OpenTrade[] = [
@@ -10,7 +11,7 @@ const trades: OpenTrade[] = [
 
 function OpenTrades() {
   const { setHeader } = useContext(HeaderContext);
-  useEffect(() => { setHeader({ title: 'Open trades', subtitle: 'Monitor active exposure before it becomes history.', action: <button type="button">New trade</button> }); }, [setHeader]);
+  useEffect(() => { setHeader({ title: 'Open trades', subtitle: 'Monitor active exposure before it becomes history.', action: <NewTradeDialog /> }); }, [setHeader]);
   const unrealizedPnl = trades.reduce((sum, trade) => sum + Number(trade.pnl.replace(/[^0-9.-]/g, '')) * (trade.pnl.includes('-') ? -1 : 1), 0);
 
   return <section className="space-y-6">

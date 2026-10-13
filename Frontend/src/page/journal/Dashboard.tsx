@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from 'react';
 import { HeaderContext } from '../../hook/HeaderContext';
 import LineChart from '../../component/charts/lineChart';
 import TradingCalendar from '../../component/charts/calendar';
+import NewTradeDialog from '../../component/journal/NewTradeDialog';
 
 const periods = ['Day', 'Week', 'Month', 'Year'];
 
@@ -20,7 +21,7 @@ function Dashboard() {
     setHeader({
       title: 'Dashboard',
       subtitle: 'A clear read on your trading performance.',
-      action: <button type="button">New trade</button>,
+      action: <NewTradeDialog />,
       action2: <button type="button">Export</button>,
     });
   }, [setHeader]);

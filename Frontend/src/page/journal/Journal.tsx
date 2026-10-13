@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { HeaderContext } from '../../hook/HeaderContext';
+import NewTradeDialog from '../../component/journal/NewTradeDialog';
 
 type Trade = {
   id: number;
@@ -39,7 +40,7 @@ function Journal() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    setHeader({ title: 'Trading journal', subtitle: 'A searchable record of every decision.', action: <button type="button">New trade</button> });
+    setHeader({ title: 'Trading journal', subtitle: 'A searchable record of every decision.', action: <NewTradeDialog /> });
   }, [setHeader]);
 
   const filteredTrades = useMemo(() => {
