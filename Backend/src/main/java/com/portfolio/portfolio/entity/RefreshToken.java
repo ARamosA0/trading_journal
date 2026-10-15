@@ -1,20 +1,16 @@
 package com.portfolio.portfolio.entity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 @Entity
 @Table(name = "refresh_tokens")
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class RefreshToken {
 
@@ -37,6 +33,16 @@ public class RefreshToken {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    public RefreshToken(Long id, String tokenHash, Instant expiresAt, Instant createdAt,
+                        boolean revoked, User user) {
+        this.id = id;
+        this.tokenHash = tokenHash;
+        this.expiresAt = expiresAt;
+        this.createdAt = createdAt;
+        this.revoked = revoked;
+        this.user = user;
+    }
 
     @PrePersist
     public void prePersist() {

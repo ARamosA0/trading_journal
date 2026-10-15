@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { createTrade } from '../../api/trades';
 
 type TradeForm = {
   asset: string;
+  direction: 'LONG' | 'SHORT';
   entryPrice: string;
   stopLoss: string;
   takeProfit: string;
@@ -17,19 +19,23 @@ export type AssetOption = {
 type NewTradeDialogProps = {
   assetOptions?: AssetOption[];
   onAssetSearch?: (query: string) => void;
+  onCreated?: () => void | Promise<void>;
 };
 
 const emptyTrade: TradeForm = {
   asset: '',
+  direction: 'LONG',
   entryPrice: '',
   stopLoss: '',
   takeProfit: '',
   quantity: '',
 };
 
-export default function NewTradeDialog({ assetOptions = [], onAssetSearch }: NewTradeDialogProps) {
+export default function NewTradeDialog({ assetOptions = [], onAssetSearch, onCreated }: NewTradeDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [form, setForm] = useState<TradeForm>(emptyTrade);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -54,10 +60,26 @@ export default function NewTradeDialog({ assetOptions = [], onAssetSearch }: New
     setForm(emptyTrade);
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // The journal API is not connected yet; keep the captured form ready for that integration.
-    closeDialog();
+    setIsSaving(true);
+    setError('');
+    try {
+      await createTrade({
+        symbol: form.asset,
+        direction: form.direction,
+        entryPrice: Number(form.entryPrice),
+        quantity: Number(form.quantity),
+        ...(form.stopLoss ? { stopLoss: Number(form.stopLoss) } : {}),
+        ...(form.takeProfit ? { takeProfit: Number(form.takeProfit) } : {}),
+      });
+      await onCreated?.();
+      closeDialog();
+    } catch {
+      setError('Could not save the trade. Check the values and try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAssetChange = (value: string) => {
@@ -108,6 +130,13 @@ export default function NewTradeDialog({ assetOptions = [], onAssetSearch }: New
                 <span className="mt-2 block text-[11px] font-normal text-[var(--text3)]">Search suggestions and live pricing will be connected here.</span>
               </label>
               <label className="text-xs font-medium text-[var(--text2)]">
+                Dirección
+                <select value={form.direction} onChange={(event) => updateField('direction', event.target.value as TradeForm['direction'])} className="mt-2">
+                  <option value="LONG">Long</option>
+                  <option value="SHORT">Short</option>
+                </select>
+              </label>
+              <label className="text-xs font-medium text-[var(--text2)]">
                 Precio de apertura
                 <input required type="number" min="0" step="any" value={form.entryPrice} onChange={(event) => updateField('entryPrice', event.target.value)} placeholder="0.00" className="journal-number mt-2" />
               </label>
@@ -126,8 +155,9 @@ export default function NewTradeDialog({ assetOptions = [], onAssetSearch }: New
             </div>
 
             <div className="mt-7 flex flex-col-reverse gap-3 border-t border-[var(--border)] pt-5 sm:flex-row sm:justify-end">
+              {error && <p className="mr-auto self-center text-xs text-[var(--red)]" role="alert">{error}</p>}
               <button type="button" onClick={closeDialog} className="rounded-lg border border-[var(--border2)] px-4 py-2.5 text-sm font-medium text-[var(--text2)] hover:text-[var(--text)]">Cancel</button>
-              <button type="submit" className="rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[#061016] hover:bg-cyan-300">Save trade</button>
+              <button type="submit" disabled={isSaving} className="rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[#061016] hover:bg-cyan-300 disabled:cursor-wait disabled:opacity-60">{isSaving ? 'Saving…' : 'Save trade'}</button>
             </div>
           </form>
         </div>
