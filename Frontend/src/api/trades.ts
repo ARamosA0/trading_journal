@@ -23,6 +23,7 @@ export type Trade = {
 };
 
 export type CreateTradeInput = {
+  accountId?: string;
   symbol: string;
   direction: TradeDirection;
   entryPrice: number;

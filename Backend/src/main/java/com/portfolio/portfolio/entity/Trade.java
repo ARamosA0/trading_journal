@@ -24,13 +24,13 @@ public class Trade {
     private String market;
     @Enumerated(EnumType.STRING)
     private TradeDirection direction;
-    @Column(name = "entry_price", nullable = false, precision = 15, scale = 3)
+    @Column(name = "entry_price", nullable = false, precision = 15, scale = 5)
     private BigDecimal entryPrice;
-    @Column(precision = 15, scale = 3)
+    @Column(precision = 15, scale = 5)
     private BigDecimal stopLoss;
-    @Column(precision = 15, scale = 3)
+    @Column(precision = 15, scale = 5)
     private BigDecimal takeProfit;
-    @Column(name = "exit_price", precision = 15, scale = 3)
+    @Column(name = "exit_price", precision = 15, scale = 5)
     private BigDecimal exitPrice;
     @Column(nullable = false, precision = 15, scale = 3)
     private BigDecimal quantity;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createTrade } from '../../api/trades';
+import { getSelectedAccountId } from '../../api/accounts';
 
 type TradeForm = {
   asset: string;
@@ -21,6 +22,13 @@ type NewTradeDialogProps = {
   onAssetSearch?: (query: string) => void;
   onCreated?: () => void | Promise<void>;
 };
+
+const priceStep = '0.00001';
+
+function normalizePrice(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed.toFixed(5) : value;
+}
 
 const emptyTrade: TradeForm = {
   asset: '',
@@ -66,6 +74,7 @@ export default function NewTradeDialog({ assetOptions = [], onAssetSearch, onCre
     setError('');
     try {
       await createTrade({
+        accountId: getSelectedAccountId() ?? undefined,
         symbol: form.asset,
         direction: form.direction,
         entryPrice: Number(form.entryPrice),
@@ -99,14 +108,14 @@ export default function NewTradeDialog({ assetOptions = [], onAssetSearch, onCre
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="new-trade-title">
           <button type="button" aria-label="Close new trade dialog" onClick={closeDialog} className="absolute inset-0 cursor-default bg-black/80 backdrop-blur-[2px]" />
-          <form onSubmit={handleSubmit} className="relative w-full max-w-xl rounded-xl border border-[var(--border2)] bg-[var(--surface)] p-5 shadow-2xl sm:p-7">
+          <form onSubmit={handleSubmit} className="relative z-10 w-full max-w-xl rounded-xl border border-[var(--border2)] bg-[var(--surface)] p-5 shadow-2xl sm:p-7">
             <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] pb-5">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">Trade ticket</p>
                 <h2 id="new-trade-title" className="mt-2 text-xl font-semibold text-[var(--text)]">New trade</h2>
                 <p className="mt-1 text-sm text-[var(--text3)]">Set the plan before recording the position.</p>
               </div>
-              <button type="button" aria-label="Close dialog" onClick={closeDialog} className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--border2)] text-lg leading-none text-[var(--text3)] transition hover:border-[var(--accent)] hover:text-[var(--text)]">×</button>
+              <button type="button" aria-label="Close dialog" onClick={closeDialog} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[var(--border2)] bg-[var(--bg3)] text-xl leading-none text-[var(--text2)] outline-none transition hover:border-[var(--accent)] hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]">×</button>
             </div>
 
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -138,7 +147,7 @@ export default function NewTradeDialog({ assetOptions = [], onAssetSearch, onCre
               </label>
               <label className="text-xs font-medium text-[var(--text2)]">
                 Precio de apertura
-                <input required type="number" min="0" step="any" value={form.entryPrice} onChange={(event) => updateField('entryPrice', event.target.value)} placeholder="0.00" className="journal-number mt-2" />
+                <input required type="number" min="0" step={priceStep} value={form.entryPrice} onChange={(event) => updateField('entryPrice', event.target.value)} onBlur={() => updateField('entryPrice', normalizePrice(form.entryPrice))} placeholder="0.00000" className="journal-number mt-2" />
               </label>
               <label className="text-xs font-medium text-[var(--text2)]">
                 Cantidad
@@ -146,18 +155,18 @@ export default function NewTradeDialog({ assetOptions = [], onAssetSearch, onCre
               </label>
               <label className="text-xs font-medium text-[var(--text2)]">
                 Stop Loss
-                <input type="number" min="0" step="any" value={form.stopLoss} onChange={(event) => updateField('stopLoss', event.target.value)} placeholder="Opcional" className="journal-number mt-2" />
+                <input type="number" min="0" step={priceStep} value={form.stopLoss} onChange={(event) => updateField('stopLoss', event.target.value)} onBlur={() => updateField('stopLoss', normalizePrice(form.stopLoss))} placeholder="Opcional" className="journal-number mt-2" />
               </label>
               <label className="text-xs font-medium text-[var(--text2)]">
                 Take Profit
-                <input type="number" min="0" step="any" value={form.takeProfit} onChange={(event) => updateField('takeProfit', event.target.value)} placeholder="Opcional" className="journal-number mt-2" />
+                <input type="number" min="0" step={priceStep} value={form.takeProfit} onChange={(event) => updateField('takeProfit', event.target.value)} onBlur={() => updateField('takeProfit', normalizePrice(form.takeProfit))} placeholder="Opcional" className="journal-number mt-2" />
               </label>
             </div>
 
             <div className="mt-7 flex flex-col-reverse gap-3 border-t border-[var(--border)] pt-5 sm:flex-row sm:justify-end">
               {error && <p className="mr-auto self-center text-xs text-[var(--red)]" role="alert">{error}</p>}
-              <button type="button" onClick={closeDialog} className="rounded-lg border border-[var(--border2)] px-4 py-2.5 text-sm font-medium text-[var(--text2)] hover:text-[var(--text)]">Cancel</button>
-              <button type="submit" disabled={isSaving} className="rounded-lg bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-[#061016] hover:bg-cyan-300 disabled:cursor-wait disabled:opacity-60">{isSaving ? 'Saving…' : 'Save trade'}</button>
+              <button type="button" onClick={closeDialog} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--border2)] !bg-[var(--bg3)] px-5 py-2.5 text-sm font-semibold text-[var(--text2)] outline-none transition hover:border-[var(--text3)] hover:!bg-[var(--surface2)] hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]">Cancel</button>
+              <button type="submit" disabled={isSaving} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--accent)] !bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-[#061016] outline-none transition hover:border-cyan-300 hover:!bg-cyan-300 focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)] disabled:cursor-wait disabled:border-[var(--border2)] disabled:!bg-[var(--border2)] disabled:text-[var(--text3)]">{isSaving ? 'Saving…' : 'Save trade'}</button>
             </div>
           </form>
         </div>

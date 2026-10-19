@@ -14,6 +14,7 @@ import com.portfolio.portfolio.repository.AccountRepository;
 import com.portfolio.portfolio.repository.TradeRepository;
 import com.portfolio.portfolio.repository.UserRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -60,9 +61,9 @@ public class TradeService {
         trade.setSymbol(request.getSymbol().trim().toUpperCase());
         trade.setMarket(defaultText(request.getMarket(), "OTHER"));
         trade.setDirection(request.getDirection());
-        trade.setEntryPrice(request.getEntryPrice());
-        trade.setStopLoss(request.getStopLoss());
-        trade.setTakeProfit(request.getTakeProfit());
+        trade.setEntryPrice(price(request.getEntryPrice()));
+        trade.setStopLoss(price(request.getStopLoss()));
+        trade.setTakeProfit(price(request.getTakeProfit()));
         trade.setQuantity(request.getQuantity());
         trade.setNotes(defaultText(request.getNotes(), ""));
         trade.setOpenAt(now);
@@ -78,9 +79,9 @@ public class TradeService {
         if (request.getSymbol() != null && !request.getSymbol().isBlank()) trade.setSymbol(request.getSymbol().trim().toUpperCase());
         if (request.getMarket() != null && !request.getMarket().isBlank()) trade.setMarket(request.getMarket().trim());
         if (request.getDirection() != null) trade.setDirection(request.getDirection());
-        if (request.getEntryPrice() != null) trade.setEntryPrice(request.getEntryPrice());
-        if (request.getStopLoss() != null) trade.setStopLoss(request.getStopLoss());
-        if (request.getTakeProfit() != null) trade.setTakeProfit(request.getTakeProfit());
+        if (request.getEntryPrice() != null) trade.setEntryPrice(price(request.getEntryPrice()));
+        if (request.getStopLoss() != null) trade.setStopLoss(price(request.getStopLoss()));
+        if (request.getTakeProfit() != null) trade.setTakeProfit(price(request.getTakeProfit()));
         if (request.getQuantity() != null) trade.setQuantity(request.getQuantity());
         if (request.getNotes() != null) trade.setNotes(request.getNotes());
         return TradeResponse.from(tradeRepository.save(trade));
@@ -95,14 +96,14 @@ public class TradeService {
         if (trade.getTradeState() != TradeState.OPEN) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Trade is already closed");
         }
-        trade.setExitPrice(request.getExitPrice());
+        trade.setExitPrice(price(request.getExitPrice()));
         BigDecimal currentPnl = trade.getPnl() == null ? BigDecimal.ZERO : trade.getPnl();
         trade.setPnl(currentPnl.add(request.getPnl() == null ? BigDecimal.ZERO : request.getPnl()));
         if (Boolean.TRUE.equals(request.getMoveStopLoss())) {
             if (request.getStopLoss() == null || request.getStopLoss().signum() < 0) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A valid stop loss is required when moving it");
             }
-            trade.setStopLoss(request.getStopLoss());
+            trade.setStopLoss(price(request.getStopLoss()));
         }
         if (request.getQuantity().compareTo(trade.getQuantity()) < 0) {
             trade.setQuantity(trade.getQuantity().subtract(request.getQuantity()));
@@ -161,5 +162,9 @@ public class TradeService {
 
     private String defaultText(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value.trim();
+    }
+
+    private BigDecimal price(BigDecimal value) {
+        return value == null ? null : value.setScale(5, RoundingMode.HALF_UP);
     }
 }
