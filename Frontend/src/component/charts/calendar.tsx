@@ -1,23 +1,35 @@
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import type { Trade } from "../../api/trades";
 
-export default function TradingCalendar() {
-    const tradingDays: Record<string, { pnl: number }> = {
-        "2026-07-08": {
-            pnl: 245,
-        },
-        "2026-07-10": {
-            pnl: -80,
-        },
-    };
+function dateKey(value: string) {
+    const date = new Date(value);
+    return localDateKey(date);
+}
+
+function localDateKey(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+export default function TradingCalendar({ trades }: { trades: Trade[] }) {
+    const tradingDays = trades.reduce<Record<string, { pnl: number; count: number }>>((days, trade) => {
+        const key = dateKey(trade.closeAt ?? trade.openAt);
+        const day = days[key] ?? { pnl: 0, count: 0 };
+        days[key] = { pnl: day.pnl + (trade.pnl || 0), count: day.count + 1 };
+        return days;
+    }, {});
+
     return (
         <>
             <FullCalendar
                 plugins={[dayGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
                 dayCellClassNames={(arg) => {
-                    const date = arg.date.toISOString().split("T")[0];
+                    const date = localDateKey(arg.date);
                     const day = tradingDays[date];
 
                     if (!day) return [];
@@ -25,7 +37,7 @@ export default function TradingCalendar() {
                     return day.pnl >= 0 ? ["profit-day"] : ["loss-day"];
                 }}
                 dayCellContent={(arg) => {
-                    const date = arg.date.toISOString().split("T")[0];
+                    const date = localDateKey(arg.date);
                     const day = tradingDays[date];
 
                     return (
@@ -34,6 +46,7 @@ export default function TradingCalendar() {
 
                         {day && (
                         <span
+                            title={`${day.count} trade${day.count === 1 ? "" : "s"}`}
                             className={`mt-2 font-mono text-sm font-bold ${
                             day.pnl >= 0 ? "text-green-400" : "text-red-400"
                             }`}

@@ -1,9 +1,9 @@
 import ReactECharts from "echarts-for-react";
 
 type ChartData = {
-    dataX: string[],
-    dataY: number[],
-    title?: string
+    dataX: string[];
+    dataY: number[];
+    title?: string;
 }
 
 function LineChart( {dataX, dataY, title}: ChartData  ) {
@@ -28,6 +28,7 @@ function LineChart( {dataX, dataY, title}: ChartData  ) {
         textStyle: {
             color: "#fff",
         },
+        valueFormatter: (value: number) => `${value >= 0 ? "+" : "-"}$${Math.abs(value).toFixed(2)}`,
         axisPointer: {
             type: "line",
         },
@@ -83,13 +84,13 @@ function LineChart( {dataX, dataY, title}: ChartData  ) {
             symbol: "circle",
             symbolSize: 7,
 
-            lineStyle: {
-                width: 4,
-                color: "#7C3AED",
-            },
+             lineStyle: {
+                 width: 3,
+                 color: "#22D3EE",
+             },
 
             itemStyle: {
-                color: "#7C3AED",
+                 color: "#22D3EE",
             },
 
             areaStyle: {

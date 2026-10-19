@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "skills": {
+    "codefmt": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/codefmt/SKILL.md",
+      "computedHash": "4d70b6998e3c2f119e85b21101436c8f8d61834255ef1a03619b15fbd12574cd"
+    },
+    "coverage": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/coverage/SKILL.md",
+      "computedHash": "0fdb6b1fca0a94e7d5cb3244801af7c2c69db014a8d60e9e1e150816d575d134"
+    },
+    "create-adaptable-composable": {
+      "source": "vuejs-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/create-adaptable-composable/SKILL.md",
+      "computedHash": "2f215126499d29a733be980ef9ce8f4ffb5f25a8831aec965d86c0cd21b2c5d2"
+    },
+    "crud-rest-controller": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/crud-rest-controller/SKILL.md",
+      "computedHash": "88134dc43233e82f2c413ed6f30e2b3e9e539b3917cb19f33ad57d41f186b0cb"
+    },
+    "dto-creator": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/dto-creator/SKILL.md",
+      "computedHash": "ab81be16315ad3ab6261c21613dc398e119058d9510a156c9a739c137cf62f33"
+    },
+    "java-debug": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/java-debug/SKILL.md",
+      "computedHash": "8cabf6c8a218d064ef906d86867be454e464673a1c8c1234d1c4ef801816b0db"
+    },
+    "run-tests": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/run-tests/SKILL.md",
+      "computedHash": "e5a773634141ced1151d0c522bde41a54075e436d5e4f56346c601f9a9c90bad"
+    },
+    "spring-data-jdbc": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/spring-data-jdbc/SKILL.md",
+      "computedHash": "4f098550fb4d4862ea008252e958225678eb340a73e70fe51c926c7b7bad19c0"
+    },
+    "spring-data-jpa": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/spring-data-jpa/SKILL.md",
+      "computedHash": "2a936a98887045bc91280fdcba4ecb1de8b54b3453f59def0e7843704c311ace"
+    },
+    "spring-explore": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/spring-explore/SKILL.md",
+      "computedHash": "dd6069d85cae4871689daab0a982aa804c66a3ab583d3d936ebcde4204ca2f7b"
+    },
+    "spring-planning": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/spring-planning/SKILL.md",
+      "computedHash": "be5e4950dbfaf4e876d2164a7211bc308b348d19b7c6cc6ace56b5a18ec22ac5"
+    },
+    "spring-security-configuration": {
+      "source": "Amplicode/spring-skills",
+      "sourceType": "github",
+      "skillPath": "skills/spring-security-configuration/SKILL.md",
+      "computedHash": "60dbc041e75b434b079874d1c01bf19b282a335e9fa89e38f3556d186803969b"
+    },
+    "vue-best-practices": {
+      "source": "vuejs-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vue-best-practices/SKILL.md",
+      "computedHash": "3df585ad31aec78fe55c56c1411262737e6b231677a3153dec512a882fde80cd"
+    },
+    "vue-debug-guides": {
+      "source": "vuejs-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vue-debug-guides/SKILL.md",
+      "computedHash": "fa7b31c32a6717ae47cd2ea208773e27536225ad053a564effe656bf927fe9ef"
+    },
+    "vue-jsx-best-practices": {
+      "source": "vuejs-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vue-jsx-best-practices/SKILL.md",
+      "computedHash": "f78720a9904eb748af26cff651aaf8c0c8e6a72f9ee30e6f0626fc45e33cfd9a"
+    },
+    "vue-options-api-best-practices": {
+      "source": "vuejs-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vue-options-api-best-practices/SKILL.md",
+      "computedHash": "b35263a402e34a93e089cdf6d2e714d2dc1670a1f834ce67215552c4a70a864c"
+    },
+    "vue-pinia-best-practices": {
+      "source": "vuejs-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vue-pinia-best-practices/SKILL.md",
+      "computedHash": "d4ba913bec21910b8e37b2115cd964df2dc43ad62346b981c7b88d4ddc8cf792"
+    },
+    "vue-router-best-practices": {
+      "source": "vuejs-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vue-router-best-practices/SKILL.md",
+      "computedHash": "f0745ed318c113e592ab4a9ded57ceadd0db2edab00cdb46b216c83f5ce0799e"
+    },
+    "vue-testing-best-practices": {
+      "source": "vuejs-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vue-testing-best-practices/SKILL.md",
+      "computedHash": "58d365899f54be9e5fa2c2e455093f9567620600578ae92aaa2f31d9b19a59ad"
+    }
+  }
+}

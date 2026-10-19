@@ -9,6 +9,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "account")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Account {
 
     @Id
@@ -29,6 +32,7 @@ public class Account {
     @Column(length = 3)
     private String currency;
 
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
     @Enumerated(EnumType.STRING)
