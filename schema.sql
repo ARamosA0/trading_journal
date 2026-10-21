@@ -11,6 +11,17 @@ CREATE TYPE trade_state AS ENUM (
   'STOP_PROFIT'
 );
 
+CREATE TYPE price_alert_direction AS ENUM (
+  'ABOVE',
+  'BELOW'
+);
+
+CREATE TYPE price_alert_status AS ENUM (
+  'ACTIVE',
+  'PAUSED',
+  'TRIGGERED'
+);
+
 CREATE TABLE users (
     id CHAR(26) PRIMARY KEY,
     email VARCHAR(250) NOT NULL UNIQUE,
@@ -28,6 +39,18 @@ CREATE TABLE account (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     state account_state NOT NULL DEFAULT 'ACTIVE',
     deleted_at TIMESTAMP
+);
+
+CREATE TABLE price_alert (
+    id CHAR(26) PRIMARY KEY,
+    user_id CHAR(26) NOT NULL REFERENCES users(id),
+    instrument VARCHAR(30) NOT NULL,
+    direction price_alert_direction NOT NULL,
+    target NUMERIC(15,5) NOT NULL,
+    current_price NUMERIC(15,5),
+    status price_alert_status NOT NULL DEFAULT 'ACTIVE',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    triggered_at TIMESTAMP
 );
 
 CREATE TABLE strategy (
