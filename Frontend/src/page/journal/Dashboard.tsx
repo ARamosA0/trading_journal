@@ -58,7 +58,6 @@ function Dashboard() {
       title: 'Dashboard',
       subtitle: 'A clear read on your trading performance.',
        action: <NewTradeDialog onCreated={() => setReloadVersion((version) => version + 1)} />,
-      action2: <button type="button">Export</button>,
     });
   }, [setHeader]);
 

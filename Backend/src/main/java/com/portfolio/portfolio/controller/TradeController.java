@@ -2,6 +2,8 @@ package com.portfolio.portfolio.controller;
 
 import com.portfolio.portfolio.dto.CloseTradeRequest;
 import com.portfolio.portfolio.dto.CreateTradeRequest;
+import com.portfolio.portfolio.dto.ImportTradesRequest;
+import com.portfolio.portfolio.dto.ImportTradesResponse;
 import com.portfolio.portfolio.dto.TradeResponse;
 import com.portfolio.portfolio.dto.UpdateTradeRequest;
 import com.portfolio.portfolio.service.TradeService;
@@ -45,6 +47,11 @@ public class TradeController {
     public ResponseEntity<TradeResponse> create(Authentication authentication, @RequestBody CreateTradeRequest request) {
         TradeResponse response = tradeService.create(authentication.getName(), request);
         return ResponseEntity.created(URI.create("/api/trades/" + response.id())).body(response);
+    }
+
+    @PostMapping("/import")
+    public ImportTradesResponse importTrades(Authentication authentication, @RequestBody ImportTradesRequest request) {
+        return tradeService.importTrades(authentication.getName(), request);
     }
 
     @PutMapping("/{id}")

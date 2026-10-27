@@ -52,6 +52,30 @@ export async function createTrade(input: CreateTradeInput) {
   return response.data;
 }
 
+export type ImportedTrade = {
+  symbol: string;
+  side: string;
+  size: number;
+  openAt: string;
+  closeAt: string | null;
+  openPrice: number;
+  closePrice: number | null;
+  takeProfit: number | null;
+  stopLoss: number | null;
+  profitUsd: number;
+};
+
+export type ImportTradesResponse = {
+  imported: number;
+  rejected: number;
+  errors: string[];
+};
+
+export async function importTrades(accountId: string, trades: ImportedTrade[]) {
+  const response = await api.post<ImportTradesResponse>('/trades/import', { accountId, trades });
+  return response.data;
+}
+
 export async function updateTrade(id: string, input: UpdateTradeInput) {
   const response = await api.put<Trade>(`/trades/${id}`, input);
   return response.data;

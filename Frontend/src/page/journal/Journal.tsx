@@ -20,6 +20,36 @@ function formatNumber(value: number | null) {
   return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 8 });
 }
 
+function csvValue(value: string | number | null) {
+  const text = value == null ? '' : String(value);
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+function exportTrades(trades: Trade[]) {
+  const headers = ['Date', 'Pair', 'Account', 'Side', 'Entry', 'Exit', 'Size', 'P&L', 'Status'];
+  const rows = trades.map((trade) => [
+    formatDate(trade.openAt),
+    trade.symbol,
+    trade.accountName,
+    trade.direction === 'LONG' ? 'Long' : 'Short',
+    trade.entryPrice,
+    trade.exitPrice,
+    trade.quantity,
+    trade.pnl,
+    statusLabel(trade.status),
+  ]);
+  const csv = [headers, ...rows].map((row) => row.map(csvValue).join(',')).join('\r\n');
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `trading-journal-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function Journal() {
   const { setHeader } = useContext(HeaderContext);
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -42,14 +72,6 @@ function Journal() {
 
   const refreshTrades = useCallback(() => { setIsLoading(true); setReloadVersion((version) => version + 1); }, []);
 
-  useEffect(() => {
-    setHeader({
-      title: 'Trading journal',
-      subtitle: 'A searchable record of every decision.',
-      action: <NewTradeDialog onCreated={refreshTrades} />,
-    });
-  }, [refreshTrades, setHeader]);
-
   const filteredTrades = useMemo(() => {
     const normalized = filterText.trim().toLowerCase();
     return trades.filter((trade) => {
@@ -58,6 +80,15 @@ function Journal() {
       return searchable.includes(normalized) && statusMatches;
     });
   }, [filterText, statusFilter, trades]);
+
+  useEffect(() => {
+    setHeader({
+      title: 'Trading journal',
+      subtitle: 'A searchable record of every decision.',
+      action: <NewTradeDialog onCreated={refreshTrades} />,
+      action2: <button type="button" onClick={() => exportTrades(filteredTrades)}>Export</button>,
+    });
+  }, [filteredTrades, refreshTrades, setHeader]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTrades.length / pageSize));
   const visibleTrades = filteredTrades.slice((currentPage - 1) * pageSize, currentPage * pageSize);

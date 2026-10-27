@@ -3,11 +3,14 @@ package com.portfolio.portfolio.service;
 import com.github.f4b6a3.ulid.UlidCreator;
 import com.portfolio.portfolio.dto.CloseTradeRequest;
 import com.portfolio.portfolio.dto.CreateTradeRequest;
+import com.portfolio.portfolio.dto.ImportTradesRequest;
+import com.portfolio.portfolio.dto.ImportTradesResponse;
 import com.portfolio.portfolio.dto.TradeResponse;
 import com.portfolio.portfolio.dto.UpdateTradeRequest;
 import com.portfolio.portfolio.entity.Account;
 import com.portfolio.portfolio.entity.AccountState;
 import com.portfolio.portfolio.entity.Trade;
+import com.portfolio.portfolio.entity.TradeDirection;
 import com.portfolio.portfolio.entity.TradeState;
 import com.portfolio.portfolio.entity.User;
 import com.portfolio.portfolio.repository.AccountRepository;
@@ -72,6 +75,44 @@ public class TradeService {
         trade.setPnl(BigDecimal.ZERO);
 
         return TradeResponse.from(tradeRepository.save(trade));
+    }
+
+    public ImportTradesResponse importTrades(String email, ImportTradesRequest request) {
+        if (request == null || request.getAccountId() == null || request.getTrades() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account and trades are required");
+        }
+        User user = user(email);
+        Account account = accountRepository.findByIdAndUser_IdAndDeletedAtIsNull(request.getAccountId(), user.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
+        int imported = 0;
+        List<String> errors = new java.util.ArrayList<>();
+        for (int index = 0; index < request.getTrades().size(); index++) {
+            ImportTradesRequest.ImportedTrade source = request.getTrades().get(index);
+            String error = validateImported(source);
+            if (error != null) {
+                errors.add("Row " + (index + 1) + ": " + error);
+                continue;
+            }
+            Trade trade = new Trade();
+            trade.setId(UlidCreator.getUlid().toString());
+            trade.setAccount(account);
+            trade.setSymbol(source.getSymbol().trim().toUpperCase());
+            trade.setMarket("SIMPLEFX");
+            trade.setDirection(importDirection(source.getSide()));
+            trade.setEntryPrice(price(source.getOpenPrice()));
+            trade.setExitPrice(price(source.getClosePrice()));
+            trade.setStopLoss(price(source.getStopLoss()));
+            trade.setTakeProfit(price(source.getTakeProfit()));
+            trade.setQuantity(source.getSize());
+            trade.setPnl(source.getProfitUsd() == null ? BigDecimal.ZERO : source.getProfitUsd());
+            trade.setOpenAt(source.getOpenAt());
+            trade.setCloseAt(source.getCloseAt());
+            trade.setCreatedAt(LocalDateTime.now());
+            trade.setTradeState(source.getCloseAt() == null ? TradeState.OPEN : TradeState.CLOSE);
+            tradeRepository.save(trade);
+            imported++;
+        }
+        return new ImportTradesResponse(imported, errors.size(), errors);
     }
 
     public TradeResponse update(String email, String id, UpdateTradeRequest request) {
@@ -158,6 +199,20 @@ public class TradeService {
                 || request.getQuantity().signum() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Symbol, direction, entry price and quantity are required");
         }
+    }
+
+    private String validateImported(ImportTradesRequest.ImportedTrade trade) {
+        if (trade == null || trade.getSymbol() == null || trade.getSymbol().isBlank()) return "Symbol is required";
+        if (trade.getSide() == null || trade.getSide().isBlank()) return "Side is required";
+        if (trade.getSize() == null || trade.getSize().signum() <= 0) return "Size must be greater than zero";
+        if (trade.getOpenAt() == null) return "Open time is required";
+        if (trade.getOpenPrice() == null || trade.getOpenPrice().signum() <= 0) return "Open price is required";
+        return null;
+    }
+
+    private TradeDirection importDirection(String side) {
+        return side.toUpperCase().contains("SELL") || side.toUpperCase().contains("SHORT")
+                ? TradeDirection.SHORT : TradeDirection.LONG;
     }
 
     private String defaultText(String value, String fallback) {
