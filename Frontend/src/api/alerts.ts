@@ -1,4 +1,4 @@
-import { api, getAccessToken } from './api';
+import { API_BASE_URL, api, getAccessToken } from './api';
 
 export type AlertDirection = 'ABOVE' | 'BELOW';
 export type AlertStatus = 'ACTIVE' | 'PAUSED' | 'TRIGGERED';
@@ -38,7 +38,7 @@ export async function streamAlerts(onAlert: (alert: PriceAlert) => void, signal:
   const token = getAccessToken();
   if (!token) return;
 
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/alerts/stream`, {
+  const response = await fetch(`${API_BASE_URL}/alerts/stream`, {
     headers: { Accept: 'text/event-stream', Authorization: `Bearer ${token}` },
     signal,
     credentials: 'include',

@@ -26,7 +26,28 @@ CREATE TABLE users (
     id CHAR(26) PRIMARY KEY,
     email VARCHAR(250) NOT NULL UNIQUE,
     password VARCHAR(250) NOT NULL,
-    username VARCHAR(250) NOT NULL UNIQUE
+    username VARCHAR(250) NOT NULL UNIQUE,
+    role VARCHAR(255),
+    google_subject VARCHAR(255) UNIQUE
+);
+
+CREATE TABLE refresh_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    revoked BOOLEAN NOT NULL DEFAULT FALSE,
+    remember_me BOOLEAN NOT NULL DEFAULT FALSE,
+    user_id CHAR(26) NOT NULL REFERENCES users(id)
+);
+
+CREATE TABLE password_reset_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+    user_id CHAR(26) NOT NULL REFERENCES users(id)
 );
 
 CREATE TABLE account (

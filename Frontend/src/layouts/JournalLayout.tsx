@@ -18,10 +18,16 @@ export default function MainLayout() {
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     return (
         <HeaderContext.Provider value={{ header, setHeader }}>
-            <div className="min-h-screen bg-[var(--bg)] md:flex">
+            <div className="min-h-screen overflow-x-clip bg-bg text-text md:flex">
+                <a
+                    href="#main-content"
+                    className="sr-only focus-visible:fixed focus-visible:left-4 focus-visible:top-4 focus-visible:z-[100] focus-visible:not-sr-only focus-visible:rounded-lg focus-visible:bg-primary focus-visible:px-4 focus-visible:py-3 focus-visible:font-semibold focus-visible:text-bg"
+                >
+                    Skip to content
+                </a>
                 <Sidebar isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
-                <main className="min-w-0 flex-1 overflow-y-auto">
+                <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto">
                     <div className="mx-auto max-w-[1600px] px-4 pb-10 pt-4 sm:px-6 lg:px-10">
                         <button
                             type="button"

@@ -22,9 +22,13 @@ El backend está implementado con Spring Boot, Spring Web MVC, Spring Data JPA, 
 | `Backend/src/main/java/com/portfolio/portfolio/security/JwtService.java` | Creación y lectura de JWT, hash de refresh tokens. |
 | `Backend/src/main/java/com/portfolio/portfolio/message/MessageCatalog.java` | Catálogo central de códigos y traducciones. |
 | `Backend/src/main/java/com/portfolio/portfolio/entity/User.java` | Persistencia de usuarios y restricciones de base de datos. |
+| `Backend/src/main/java/com/portfolio/portfolio/entity/PasswordResetToken.java` | Hash, expiración y uso único de tokens de recuperación. |
+| `Backend/src/main/java/com/portfolio/portfolio/service/GoogleAuthService.java` | Validación del ID token de Google y conversión a sesión propia. |
 | `Backend/src/main/java/com/portfolio/portfolio/repository` | Acceso a usuarios y refresh tokens. |
 | `Backend/src/test/java/com/portfolio/portfolio/service/AuthServiceTest.java` | Pruebas unitarias de `AuthService`. |
 | `Backend/src/test/java/com/portfolio/portfolio/security/JwtServiceTest.java` | Pruebas unitarias de `JwtService`. |
+| `Backend/src/test/java/com/portfolio/portfolio/service/GoogleAuthServiceTest.java` | Pruebas de validación del ID token de Google. |
+| `Backend/src/test/java/com/portfolio/portfolio/service/TradeServiceTest.java` | Pruebas de servicio de operaciones. |
 | `Backend/src/test/java/com/portfolio/portfolio/message/MessageCatalogTest.java` | Pruebas del catálogo multidioma. |
 
 ## 3. Flujo de registro
@@ -81,6 +85,12 @@ El servicio:
 6. Guarda solamente el hash SHA-256 del refresh token.
 7. Devuelve el access token y coloca el refresh token original en una cookie HTTP-only.
 
+El request puede incluir `rememberMe`. Sin esta opción, la cookie es de sesión y
+el refresh token vence en 24 horas. Con ella, se establece `Max-Age=30 días` y el
+registro de refresh vence en 30 días. El indicador se guarda con el refresh token
+y se conserva durante la rotación. En ambos casos el access token sigue solo en
+memoria en el cliente y la cookie mantiene `SameSite=Strict`.
+
 Cuando el correo no existe o la contraseña no coincide, se devuelve el mismo error `INVALID_CREDENTIALS`. Esto evita revelar si un correo está registrado.
 
 ## 5. Refresh tokens
@@ -104,6 +114,41 @@ Cuando es válido:
 
 Este proceso implementa rotación de refresh tokens.
 
+## 5.1 Inicio de sesión con Google
+
+`POST /auth/google` recibe `{ "credential": "<Google ID token>", "rememberMe": false }`.
+El backend valida la firma con las claves públicas de Google y comprueba issuer,
+expiración, `aud`, `azp` cuando aplica, y `email_verified=true`. La audiencia debe
+coincidir exactamente con `GOOGLE_CLIENT_ID`.
+
+El identificador del proveedor se almacena en `users.google_subject` con unicidad.
+Una cuenta local con el mismo email se vincula solo después de validar el correo
+verificado de Google. Para una cuenta nueva se crea un username único y un hash
+BCrypt aleatorio que no es utilizable como contraseña elegida por el usuario.
+Después se emite el JWT propio y el refresh cookie habitual; el ID token de Google
+no se guarda ni se usa como token de API.
+
+## 5.2 Recuperación de contraseña
+
+`POST /auth/password/forgot` siempre responde `202` con el mismo código y mensaje
+genérico, independientemente de que el email exista. Cuando el email está
+configurado, se invalida cualquier solicitud anterior, se genera un token
+aleatorio de 64 bytes y se guarda solamente su hash SHA-256. El enlace expira en
+15 minutos. Si el envío SMTP falla, el token se invalida y el servicio no registra
+ni devuelve el enlace/token.
+
+`POST /auth/password/reset` recibe el token y la nueva contraseña. La fila se lee
+con bloqueo pesimista para evitar usos concurrentes; un token expirado, usado o
+desconocido se rechaza. Se valida la política existente, se almacena un hash
+BCrypt nuevo, se consume el token y se revocan todos los refresh tokens. Los JWT
+de acceso existentes no tienen revocación inmediata y pueden seguir siendo
+válidos hasta que expiren (una hora como máximo). También se elimina la cookie
+refresh del navegador que completó el restablecimiento.
+
+SMTP está apagado por defecto (`AUTH_EMAIL_ENABLED=false`). El endpoint conserva
+la respuesta genérica mientras no esté configurado, pero no enviará correo hasta
+que se habilite SMTP.
+
 ## 6. Logout y revocación
 
 `POST /auth/logout` revoca el refresh token recibido, si existe, y limpia la cookie `refreshToken`.
@@ -125,6 +170,9 @@ El logout es tolerante a un token inexistente o vacío. El frontend limpia siemp
 
 El servicio también permite extraer cada claim y genera refresh tokens aleatorios de 64 bytes, codificados en Base64 URL-safe.
 
+El secreto HS256 se carga exclusivamente desde `JWT_SECRET`, en Base64, y debe
+contener al menos 256 bits. No se deja un secreto por defecto en el código.
+
 ## 8. Catálogo de mensajes
 
 El archivo central es:
@@ -143,6 +191,8 @@ El catálogo contiene grupos de códigos:
 ### Auth
 
 - `INVALID_CREDENTIALS`
+- `INVALID_GOOGLE_CREDENTIAL`
+- `GOOGLE_AUTH_UNAVAILABLE`
 
 ### Registration
 
@@ -165,6 +215,12 @@ El catálogo contiene grupos de códigos:
 - `LOGIN_SUCCESS`
 - `REFRESH_SUCCESS`
 - `LOGOUT_SUCCESS`
+
+### Password reset
+
+- `PASSWORD_RESET_REQUEST_ACCEPTED`
+- `PASSWORD_RESET_SUCCESS`
+- `INVALID_PASSWORD_RESET_TOKEN`
 
 ### 8.1 Cómo se selecciona el idioma
 
@@ -227,6 +283,10 @@ Prueba con Mockito las dependencias del servicio y cubre:
 - Refresh token expirado.
 - Logout con token válido y token vacío.
 - Revocación de todos los tokens del usuario.
+- Duraciones de refresh con y sin “Remember me”.
+- Alta/autenticación Google, email verificado y vinculación por correo existente.
+- Solicitud de reset no enumerable, hash de token y entrega por notifier.
+- Uso único/expiración de reset, política de password y revocación de sesiones.
 
 ### 9.2 `JwtServiceTest`
 
@@ -239,8 +299,19 @@ Cubre:
 - Generación de refresh token.
 - Expiración futura.
 - Estado inicial no revocado.
+- Duraciones distintas para sesión normal y persistente.
+- Generación de tokens opacos de alta entropía.
 
-### 9.3 `MessageCatalogTest`
+### 9.3 `GoogleAuthServiceTest`
+
+Comprueba que el ID token validado produce una sesión de la aplicación y rechaza
+un correo que Google no marca como verificado.
+
+### 9.4 `TradeServiceTest`
+
+Contiene las pruebas existentes del servicio de operaciones.
+
+### 9.5 `MessageCatalogTest`
 
 Cubre:
 
@@ -249,7 +320,7 @@ Cubre:
 - Fallback al español para un idioma no soportado.
 - Comportamiento para un código desconocido.
 
-### 9.4 Test de contexto
+### 9.6 Test de contexto
 
 `PortfolioApplicationTests` verifica que el contexto Spring pueda iniciar con PostgreSQL y crear los repositorios y beans principales.
 
@@ -258,7 +329,7 @@ Cubre:
 Desde la raíz, con los contenedores activos:
 
 ```bash
-docker compose exec -T backend ./mvnw test
+docker compose --profile development exec -T backend mvn test
 ```
 
 Desde `Backend/`, si PostgreSQL está disponible y `target/` tiene permisos adecuados:
@@ -275,7 +346,7 @@ Para ejecutar una clase específica:
 
 Resultado actual de la suite implementada:
 
-- 20 tests ejecutados.
+- 38 tests ejecutados.
 - 0 fallos.
 - 0 errores.
 - 0 tests omitidos.
@@ -305,7 +376,25 @@ entry(
 )
 ```
 
-## 12. Consideraciones pendientes
+## 12. Configuración local y consideraciones de producción
+
+La configuración versionada no contiene credenciales. Para Compose:
+
+1. Copiar `.env.example` a `.env`.
+2. Completar `POSTGRES_USER`, `POSTGRES_PASSWORD` y generar `JWT_SECRET` con
+   `openssl rand -base64 32`.
+3. Para Google, configurar `GOOGLE_CLIENT_ID` en Google Cloud Console y añadir
+   los orígenes locales/de producción autorizados. Compose lo entrega al backend
+   y a Vite.
+4. Para recovery real, configurar SMTP y `AUTH_EMAIL_ENABLED=true`. En local,
+   establecer `PASSWORD_RESET_URL` en el origen del frontend.
+5. Para desarrollo ejecutar `docker compose --profile development up --build`; para probar las imágenes de producción localmente, `docker compose --profile production up --build`.
+
+Si se usa PostgreSQL con un volumen existente, cambiar las variables de entorno
+no rota el usuario/contraseña de la base ya inicializada: hacer backup y cambiar
+la credencial dentro de PostgreSQL antes de actualizar `.env`. Rotar los secretos
+que estuvieron expuestos previamente en archivos versionados; rotar `JWT_SECRET`
+invalida los access tokens actuales.
 
 La suite actual es principalmente unitaria. Las siguientes pruebas pueden agregarse como siguiente etapa:
 
@@ -317,8 +406,10 @@ La suite actual es principalmente unitaria. Las siguientes pruebas pueden agrega
 
 También se deben revisar antes de producción:
 
-- Mover el secreto JWT fuera del código fuente y cargarlo desde variables de entorno.
+- Mantener `JWT_SECRET` y credenciales SMTP/PostgreSQL fuera del repositorio.
+- Rotar credenciales PostgreSQL previamente expuestas en archivos versionados.
 - Eliminar la declaración duplicada de `spring-boot-devtools` en `pom.xml`.
 - Usar migraciones versionadas en lugar de depender solamente de `ddl-auto=update`.
-- Confirmar que las contraseñas y credenciales de PostgreSQL no estén expuestas en configuración compartida.
-- Activar `Secure` en cookies cuando la aplicación se sirva por HTTPS.
+- Activar `AUTH_COOKIE_SECURE=true` al servir sobre HTTPS.
+- Proteger y limitar solicitudes de login y recuperación con rate limiting antes
+  de exponer el servicio públicamente.

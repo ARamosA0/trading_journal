@@ -24,6 +24,13 @@ El access token no se persiste en el navegador. Cuando la aplicación arranca,
 Si el refresh es válido, se guarda el nuevo access token en memoria. Si falla,
 se limpia la sesión y `RequireAuth` redirige al usuario a `/login`.
 
+La opción **Remember me** no guarda credenciales ni el access token en el
+navegador. Si está activada, el backend establece una cookie `HttpOnly`
+persistent y refresh tokens rotatorios con vigencia de 30 días. Si está
+desactivada, la cookie no incluye `Max-Age` (cookie de sesión) y el refresh token
+vence en 24 horas. La cookie conserva `SameSite=Strict`; `Secure` se activa con
+`AUTH_COOKIE_SECURE=true` en HTTPS.
+
 ## Guard de autenticación
 
 `Frontend/src/router/RequireAuth.tsx` utiliza `Outlet` para renderizar las
@@ -90,6 +97,33 @@ El frontend convierte `rol` en `role` y normaliza el valor a mayúsculas antes
 de guardarlo. Después del login se redirige a la ruta solicitada originalmente
 o, si no existe, a `/journal`.
 
+## Google Sign-In
+
+Login y Signup usan Google Identity Services cuando se configura
+`VITE_GOOGLE_CLIENT_ID`. El navegador envía el ID token a `POST /auth/google`;
+el backend verifica firma, expiración, issuer, audience/authorized party y
+`email_verified` contra las claves públicas de Google. No se acepta un token de
+otro client ID ni se guarda el token de Google.
+
+Los usuarios se identifican mediante el `sub` estable de Google. Una cuenta
+existente con el mismo correo solo se vincula cuando Google afirma que el correo
+está verificado. La respuesta de autenticación mantiene el contrato actual y la
+cookie refresh `HttpOnly`. `GOOGLE_CLIENT_ID` (backend) y
+`VITE_GOOGLE_CLIENT_ID` (frontend) deben ser el mismo Client ID.
+
+## Recuperación de contraseña
+
+- `POST /auth/password/forgot` responde siempre `202` con el mismo código y
+  mensaje, exista o no la cuenta, para evitar enumerar correos.
+- Cuando SMTP está habilitado, se envía un enlace con un token aleatorio de un
+  solo uso, guardando en PostgreSQL solamente su hash SHA-256. El token expira
+  en 15 minutos y una nueva solicitud invalida el enlace anterior.
+- `POST /auth/password/reset` valida la política de contraseña, consume el token
+  y revoca todos los refresh tokens del usuario. Los access tokens ya emitidos
+  pueden seguir siendo válidos hasta su expiración (máximo una hora).
+- SMTP está deshabilitado por defecto. Configurar `AUTH_EMAIL_ENABLED=true`, los
+  valores SMTP y `PASSWORD_RESET_URL` es necesario para la entrega de correos.
+
 ## Autorización en backend
 
 La configuración global conserva:
@@ -128,3 +162,9 @@ ignorar el frontend y llamar directamente a la API, por lo que cada operación
    redirección.
 6. Llamar directamente a un endpoint `ADMIN` con un usuario `USER` y comprobar
    que el backend responde `403`.
+7. Marcar y desmarcar “Remember me”; revisar que el refresh cookie solo tenga
+   `Max-Age` al marcarlo y que la duración sobreviva a cada rotación.
+8. Iniciar sesión con Google con Client ID correcto y comprobar que el backend
+   rechaza credenciales con audience o correo no verificado incorrectos.
+9. Solicitar dos restablecimientos para la misma cuenta; comprobar que solo el
+   enlace más reciente funciona y que el token no se puede reutilizar.

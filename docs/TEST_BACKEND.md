@@ -206,7 +206,8 @@ PostgreSQL debe estar disponible. Desde la raíz:
 
 ```bash
 docker compose up -d db
-docker compose exec -T backend ./mvnw test
+docker compose --profile development up -d backend
+docker compose --profile development exec -T backend mvn test
 ```
 
 La suite actual ejecuta las pruebas dentro del contenedor backend y usa PostgreSQL para el contexto de Spring.
@@ -225,19 +226,19 @@ El valor configurado por defecto usa el hostname `db`, por lo que normalmente se
 ### Una clase específica
 
 ```bash
-docker compose exec -T backend ./mvnw -Dtest=TradeServiceTest test
+docker compose --profile development exec -T backend mvn -Dtest=TradeServiceTest test
 ```
 
 ### Un método específico
 
 ```bash
-docker compose exec -T backend ./mvnw -Dtest=TradeServiceTest#partiallyClosesTradeAndMovesStopLoss test
+docker compose --profile development exec -T backend mvn -Dtest=TradeServiceTest#partiallyClosesTradeAndMovesStopLoss test
 ```
 
 ### Compilación sin pruebas
 
 ```bash
-docker compose exec -T backend ./mvnw -DskipTests compile
+docker compose --profile development exec -T backend mvn -DskipTests compile
 ```
 
 ## 7. Diagnóstico de fallos
@@ -254,7 +255,7 @@ docker compose exec -T backend ./mvnw -DskipTests compile
 Antes de integrar cambios backend, deben pasar:
 
 ```bash
-docker compose exec -T backend ./mvnw test
+docker compose --profile development exec -T backend mvn test
 ```
 
 Además, todo nuevo comportamiento debe tener al menos una prueba positiva y una prueba de validación o autorización negativa.

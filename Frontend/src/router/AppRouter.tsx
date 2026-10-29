@@ -2,6 +2,8 @@ import { Route, Routes } from "react-router-dom";
 import Landing from '../page/Landing'
 import Login from '../page/Login'
 import Singup from '../page/Singup'
+import ForgotPassword from "../page/ForgotPassword";
+import ResetPassword from "../page/ResetPassword";
 import JournalLayout from '../layouts/JournalLayout'
 import Journal from '../page/journal/Journal'
 import Profile from '../page/journal/Profile'
@@ -17,6 +19,8 @@ export default function AppRouter() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Singup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
                 <Route element={<RequireAuth/>}>
                     <Route element={<JournalLayout />}>

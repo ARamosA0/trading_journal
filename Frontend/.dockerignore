@@ -1,0 +1,12 @@
+.git
+.idea
+*.iml
+node_modules
+dist
+dist-ssr
+.vite
+coverage
+.env
+.env.*
+*.log
+*.md

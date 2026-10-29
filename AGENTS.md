@@ -12,22 +12,22 @@
 
 ## Architecture
 
-- The current application is a single backend with a separate frontend; `docker-compose.yaml` is the local development topology, not the production AWS deployment model.
+- The current application is a single backend with a separate frontend; `docker-compose.yaml` provides development and production-like local profiles, not the production AWS deployment model.
 - Keep backend domain boundaries explicit in controllers, services, repositories, DTOs, and entities. For future microservices, split by business domain rather than by technical layer, and avoid cross-domain entity/repository imports.
 - Treat backend processes as stateless and keep configuration, credentials, database connections, and service URLs externalized through environment or deployment configuration. Do not add AWS secrets to source control.
 - A future service must own its data and expose a deliberate API or event contract; do not let the frontend or another service access its database directly. Prefer independently deployable containers over coupling services to the Compose network.
-- Authentication remains stateless for access tokens. The access token is held in frontend memory only; the persistent HTTP-only refresh cookie reconstructs the session after reload or browser restart. Never move the refresh token or access token to `localStorage` as a shortcut.
+- Authentication remains stateless for access tokens. The access token is held in frontend memory only; the HTTP-only refresh cookie reconstructs the session after reload. With “Remember me,” that cookie persists for up to 30 days and can restore the session after a browser restart; otherwise it is a session cookie. Never move the refresh token or access token to `localStorage` as a shortcut.
 
 ## Development
 
-- From the repository root, `docker compose up --build` starts PostgreSQL, the backend, and the Vite frontend. Use `http://localhost:3000`, `http://localhost:8080`, and PostgreSQL on `5432`.
-- Compose gives the backend the database hostname `db`; a backend started directly on the host must override `spring.datasource.url` because the checked-in default also uses `db`.
-- Frontend API endpoints come from `Frontend/.env` (`VITE_API_URL=/api` and `VITE_AUTH_URL=/auth`). Vite proxies both paths to the backend so frontend and authentication cookies remain same-origin during local development. The proxy target defaults to `http://127.0.0.1:8080` for host development; Compose sets `VITE_PROXY_TARGET=http://backend:8080` for the frontend container.
+- Copy `.env.example` to `.env`, fill the required database values, and generate `JWT_SECRET` with `openssl rand -base64 32`. From the repository root, `docker compose --profile development up --build` starts PostgreSQL, the backend, and the Vite frontend. Use `http://localhost:3000`, `http://localhost:8080`, and PostgreSQL on `5432`. The production-like local profile is `docker compose --profile production up --build`; it serves the frontend through unprivileged Nginx on port `3000` and keeps the backend internal.
+- Compose gives the backend the database hostname `db`; a backend started directly on the host uses the `localhost` datasource default and must provide database credentials through environment variables.
+- Frontend API endpoints come from `Frontend/.env` (copy `Frontend/.env.example`; `VITE_API_URL=/api` and `VITE_AUTH_URL=/auth`). Vite proxies both paths to the backend so frontend and authentication cookies remain same-origin during local development. Set `VITE_GOOGLE_CLIENT_ID` to enable Google Sign-In. The proxy target defaults to `http://127.0.0.1:8080` for host development; Compose sets `VITE_PROXY_TARGET=http://backend:8080` for the frontend container.
 - Backend commands run from `Backend/`: `./mvnw spring-boot:run`, `./mvnw test`, or one test with `./mvnw -Dtest=PortfolioApplicationTests test`.
 - Frontend commands run from `Frontend/`: `npm ci`, `npm run dev`, `npm run lint`, `npm run build`, and `npm run preview`.
-- Full backend verification should run from the repository root with `docker compose exec -T backend ./mvnw test`; the current suite covers `AuthService`, `JwtService`, `MessageCatalog`, and Spring context startup. It currently contains 20 passing tests.
+- Full backend verification should run from the repository root with `docker compose --profile development exec -T backend mvn test`; the current suite covers `AuthService`, `JwtService`, `GoogleAuthService`, `MessageCatalog`, `TradeService`, and Spring context startup. It currently contains 38 passing tests.
 - Run PostgreSQL before backend tests or the backend test context may fail while creating the JPA datasource; `docker compose up -d db` is the focused prerequisite.
-- Docker writes the mounted `Backend/target/` as `root`; if host Maven fails with `Permission denied` there, run the Maven command in the backend container or fix the generated directory ownership before retrying.
+- The development backend runs as UID/GID 1000 to match the host user and avoid root-owned files under `Backend/target/`. If an older container left root-owned output, correct its ownership before retrying host Maven.
 
 ## Boundaries
 

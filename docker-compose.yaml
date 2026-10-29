@@ -1,50 +1,110 @@
+x-backend-environment: &backend-environment
+  SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-app_db}
+  SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+  SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+  JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  AUTH_EMAIL_ENABLED: ${AUTH_EMAIL_ENABLED:-false}
+  AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+  PASSWORD_RESET_URL: ${PASSWORD_RESET_URL:-http://localhost:3000/reset-password}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USERNAME: ${SMTP_USERNAME:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_FROM: ${SMTP_FROM:-no-reply@tradevault.example}
+  SMTP_AUTH: ${SMTP_AUTH:-true}
+  SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
+
 services:
   db:
     image: postgres:15
     container_name: postgres_db
-    restart: always
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: app_db
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-app_db}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   backend:
+    profiles: [development]
+    image: trading-journal/backend:dev
     build:
       context: ./Backend
       dockerfile: Dockerfile.dev
     container_name: java_backend
-    restart: always
+    restart: unless-stopped
     depends_on:
-      - db
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/app_db
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: password
+      db:
+        condition: service_healthy
+    environment: *backend-environment
     ports:
       - "8080:8080"
-    working_dir: /app
-    command: mvn -f /app/pom.xml spring-boot:run
     volumes:
       - ./Backend:/app
-      - ~/.m2:/root/.m2
+      - backend_maven_cache:/home/ubuntu/.m2
 
   frontend:
-    build: ./Frontend
+    profiles: [development]
+    image: trading-journal/frontend:dev
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile.dev
     container_name: react_frontend
-    restart: always
+    restart: unless-stopped
     depends_on:
       - backend
     environment:
       VITE_PROXY_TARGET: http://backend:8080
+      VITE_API_URL: /api
+      VITE_AUTH_URL: /auth
+      VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     ports:
       - "3000:5173"
     volumes:
       - ./Frontend:/app
-      - /app/node_modules
+      - frontend_node_modules:/app/node_modules
+      - frontend_npm_cache:/home/node/.npm
+
+  backend-production:
+    profiles: [production]
+    image: trading-journal/backend:production
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment: *backend-environment
+
+  frontend-production:
+    profiles: [production]
+    image: trading-journal/frontend:production
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+        VITE_AUTH_URL: /auth
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    restart: unless-stopped
+    depends_on:
+      - backend-production
+    ports:
+      - "3000:8080"
 
 volumes:
   postgres_data:
+  backend_maven_cache:
+  frontend_node_modules:
+  frontend_npm_cache:

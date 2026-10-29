@@ -4,6 +4,9 @@ import type { AuthResponse } from "./auth";
 let accessToken: string | null = null;
 let refreshPromise: Promise<AuthResponse> | null = null;
 
+export const API_BASE_URL = (import.meta.env.VITE_API_URL?.trim() || "/api").replace(/\/+$/, "");
+const AUTH_BASE_URL = (import.meta.env.VITE_AUTH_URL?.trim() || "/auth").replace(/\/+$/, "");
+
 export function setAccessToken(token: string | null) {
     accessToken = token;
 }
@@ -13,7 +16,7 @@ export function getAccessToken() {
 }
 
 export const auth = axios.create({
-    baseURL: import.meta.env.VITE_AUTH_URL,
+    baseURL: AUTH_BASE_URL,
     headers: {
         "Accept-Language": navigator.language
     },
@@ -21,7 +24,7 @@ export const auth = axios.create({
 });
 
 export const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: API_BASE_URL,
     headers: {
         "Content-Type": "application/json"
     },

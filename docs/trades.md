@@ -180,5 +180,5 @@ Cubren:
 Para ejecutarlas junto con toda la suite:
 
 ```bash
-docker compose exec -T backend ./mvnw test
+docker compose --profile development exec -T backend mvn test
 ```

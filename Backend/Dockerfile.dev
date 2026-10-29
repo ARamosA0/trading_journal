@@ -1,11 +1,18 @@
-FROM maven:3.9-eclipse-temurin-21
+# syntax=docker/dockerfile:1
+
+FROM maven:3.9.9-eclipse-temurin-21-noble
+
+LABEL org.opencontainers.image.source="https://github.com/ARamosA0/trading_journal"
 
 WORKDIR /app
 
-COPY pom.xml .
+RUN mkdir -p /home/ubuntu/.m2 /app \
+    && chown -R 1000:1000 /home/ubuntu /app
 
-RUN mvn dependency:go-offline
+ENV MAVEN_CONFIG=/home/ubuntu/.m2
 
-# Use the mounted source code and run in dev mode
-# CMD ["mvn", "-f", "/app/pom.xml", "spring-boot:run"]
-CMD ["mvn", "spring-boot:run"]
+USER 1000:1000
+
+EXPOSE 8080
+
+CMD ["mvn", "--no-transfer-progress", "spring-boot:run"]

@@ -1,51 +1,53 @@
-import Card from "../reusable/card";
 import { PaypalIcon } from "../reusable/paypalIcon";
 import { CoffeIcon } from "../reusable/coffeIcon";
 import { CriptoIcon } from "../reusable/cryptoIcon";
 
+const supportMethods = [
+    {
+        title: "PayPal",
+        description: "A quick, familiar way to contribute to the project.",
+        icon: <PaypalIcon />,
+    },
+    {
+        title: "Buy Me a Coffee",
+        description: "Support ongoing development with a one-time contribution.",
+        icon: <CoffeIcon />,
+    },
+    {
+        title: "Crypto",
+        description: "Contribute using BTC, ETH, USDT, and other supported assets.",
+        icon: <CriptoIcon />,
+    },
+];
 
-function Pricing () {
-    const suport = [
-        {
-            title: "PayPal",
-            description: "Fast and secure payment with your PayPal account",
-            icon: <PaypalIcon />,
-            btntext: "donate via PayPal",
-            titleversion: 1
-        },
-        {
-            title: "Buy Me a Coffee",
-            description: "Support us with a coffee or more through BMC",
-            icon: <CoffeIcon />,
-            btntext: "Buy me a coffee",
-            titleversion: 1
-        },
-        {
-            title: "Crypto",
-            description: "BTC, ETH, USDT and more supported",
-            icon: <CriptoIcon />,
-            btntext: "View Addresses",
-            titleversion: 1
-        },
-    ]
+function Pricing() {
     return (
-        <>
-            <section id="pricing" className="flex flex-col gap-4 items-center justify-center text-center py-20 px-4 sm:px-6 lg:px-8 mt-10">
-                <div
-                >
-                    <span className="text-6xl text-text md:text-7xl font-black ">Love TradeVault? </span> 
-                    <span className="text-6xl md:text-7xl font-black  text-transparent bg-clip-text" style={{ backgroundImage: "var(--gradient)" }}>Support us</span>
+        <section id="pricing" aria-labelledby="support-title" className="scroll-mt-24 px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
+            <div className="mx-auto max-w-7xl">
+                <div className="mx-auto max-w-2xl text-center">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Community supported</p>
+                    <h2 id="support-title" className="mt-4 text-balance text-3xl font-semibold tracking-tight text-text sm:text-5xl">
+                        Help keep <span translate="no">TradeVault</span> growing.
+                    </h2>
+                    <p className="mx-auto mt-5 max-w-xl text-pretty text-base leading-7 text-text2 sm:text-lg">
+                        Your support helps us keep improving the tools traders use to learn from their decisions.
+                    </p>
                 </div>
-                <div className="mt-5">
-                    <p className="text-lg text-text2">Help us keep TradeVault free and improve it. Choose your preferred method to make a donation.</p>
+
+                <div className="mt-12 grid gap-4 md:grid-cols-3 lg:mt-14">
+                    {supportMethods.map((method) => (
+                        <article key={method.title} className="flex h-full flex-col items-center rounded-2xl border border-white/[0.08] bg-[var(--bg2)] p-6 text-center transition-colors hover:border-white/15 sm:p-7">
+                            <div aria-hidden="true">
+                                {method.icon}
+                            </div>
+                            <h3 className="text-lg font-semibold text-text">{method.title}</h3>
+                            <p className="mt-2 text-sm leading-6 text-text2">{method.description}</p>
+                        </article>
+                    ))}
                 </div>
-                <div className="w-full max-w-7xl mx-auto mt-5 flex flex-wrap gap-4 py-20 px-4 sm:px-6 lg:px-8 mt-10 justify-items-center">
-                    { suport.map((item, index) => (
-                        <Card key={index} title={item.title} description={item.description} iconSvg={item.icon} btnText={item.btntext} titleVersion={1} width={"md"} descriptionVersion={2} haveHover={false} high={100} />
-                    ))}   
-                 </div>
-            </section>
-        </>
-    )
+            </div>
+        </section>
+    );
 }
+
 export default Pricing;
