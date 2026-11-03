@@ -7,8 +7,17 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TradeRepository extends JpaRepository<Trade, String> {
-    List<Trade> findByAccount_User_IdAndDeletedAtIsNullOrderByOpenAtDesc(String userId);
-    List<Trade> findByAccount_IdAndDeletedAtIsNull(String accountId);
-    List<Trade> findByAccount_User_IdAndTradeStateAndDeletedAtIsNullOrderByOpenAtDesc(String userId, TradeState state);
-    Optional<Trade> findByIdAndAccount_User_IdAndDeletedAtIsNull(String id, String userId);
+  List<Trade> findByAccount_User_IdAndDeletedAtIsNullOrderByOpenAtDesc(String userId);
+
+  List<Trade> findByAccount_IdAndDeletedAtIsNull(String accountId);
+
+  List<Trade> findByAccount_IdAndDeletedAtIsNullOrderByOpenAtDesc(String accountId);
+
+  List<Trade> findByAccount_User_IdAndTradeStateAndDeletedAtIsNullOrderByOpenAtDesc(
+      String userId, TradeState state);
+
+  List<Trade> findByAccount_IdAndTradeStateAndDeletedAtIsNullOrderByOpenAtDesc(
+      String accountId, TradeState state);
+
+  Optional<Trade> findByIdAndAccount_User_IdAndDeletedAtIsNull(String id, String userId);
 }

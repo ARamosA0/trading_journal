@@ -2,6 +2,13 @@ import { api } from './api';
 
 export type TradeDirection = 'LONG' | 'SHORT';
 export type TradeStatus = 'OPEN' | 'CLOSE' | 'BREAKE_EVEN' | 'STOP_PROFIT';
+export type TradeImportResponse = {
+  accountId: string;
+  provider: 'SIMPLEFX' | 'BITGET';
+  importedCount: number;
+  skipped: boolean;
+  importedAt: string;
+};
 
 export type Trade = {
   id: string;
@@ -16,6 +23,8 @@ export type Trade = {
   exitPrice: number | null;
   quantity: number;
   pnl: number;
+  commission: number | null;
+  swap: number | null;
   openAt: string;
   closeAt: string | null;
   status: TradeStatus;
@@ -37,13 +46,23 @@ export type UpdateTradeInput = Pick<CreateTradeInput, 'symbol' | 'direction' | '
   takeProfit?: number;
 };
 
-export async function getTrades() {
-  const response = await api.get<Trade[]>('/trades');
+export async function getTrades(accountId: string) {
+  const response = await api.get<Trade[]>('/trades', { params: { accountId } });
   return response.data;
 }
 
-export async function getOpenTrades() {
-  const response = await api.get<Trade[]>('/trades/open');
+export async function getOpenTrades(accountId: string) {
+  const response = await api.get<Trade[]>('/trades/open', { params: { accountId } });
+  return response.data;
+}
+
+export async function importTrades(accountId: string, file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post<TradeImportResponse>(
+    `/accounts/${accountId}/trade-imports`,
+    formData,
+  );
   return response.data;
 }
 

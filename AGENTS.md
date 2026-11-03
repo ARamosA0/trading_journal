@@ -3,7 +3,7 @@
 ## Layout
 
 - `Backend/` is the Spring Boot 4 application; the entrypoint is `com.portfolio.portfolio.PortfolioApplication`, with controllers, services, JWT security, and JPA entities under `src/main/java`.
-- Backend structure: `src/main/java/com/portfolio/portfolio/controller` exposes HTTP endpoints, `service` contains application logic, `repository` contains JPA access, `entity` contains persistence/domain models, `dto` contains API payloads, and `security` plus `config` contain authentication and infrastructure configuration. Backend tests are under `src/test` and runtime configuration is under `src/main/resources`.
+- Backend structure: `src/main/java/com/portfolio/portfolio/controller` exposes HTTP endpoints, `service` contains application logic, `repository` contains JPA access, `entity` contains persistence/domain models, `dto` contains API payloads, and `security` plus `config` contain authentication and infrastructure configuration. Trade history import lives in `service/tradeimport`, with one adapter per supported provider and a shared CSV/Excel file reader. Backend tests are under `src/test` and runtime configuration is under `src/main/resources`.
 - Backend authentication support also lives in `message/MessageCatalog.java`, which is the single source of truth for error/success codes and Spanish/English text. `dto/ApiMessage.java` is the common message response shape; `dto/AuthResponse.java` also carries `code`, `message`, and `type` on successful authentication responses.
 - `Frontend/` is a Vite React 19 + TypeScript app; `src/main.tsx` mounts the app and `src/router/AppRouter.tsx` defines the public and journal routes.
 - Frontend structure: `src/api` owns Axios clients, `authContext` owns authentication state, `router` owns routes, `page` owns screens (including `page/journal`), `layouts` owns shared page shells, `component` owns reusable UI and charts, `hook` owns custom hooks, and `assets` owns static images/icons.
@@ -25,7 +25,7 @@
 - Frontend API endpoints come from `Frontend/.env` (copy `Frontend/.env.example`; `VITE_API_URL=/api` and `VITE_AUTH_URL=/auth`). Vite proxies both paths to the backend so frontend and authentication cookies remain same-origin during local development. Set `VITE_GOOGLE_CLIENT_ID` to enable Google Sign-In. The proxy target defaults to `http://127.0.0.1:8080` for host development; Compose sets `VITE_PROXY_TARGET=http://backend:8080` for the frontend container.
 - Backend commands run from `Backend/`: `./mvnw spring-boot:run`, `./mvnw test`, or one test with `./mvnw -Dtest=PortfolioApplicationTests test`.
 - Frontend commands run from `Frontend/`: `npm ci`, `npm run dev`, `npm run lint`, `npm run build`, and `npm run preview`.
-- Full backend verification should run from the repository root with `docker compose --profile development exec -T backend mvn test`; the current suite covers `AuthService`, `JwtService`, `GoogleAuthService`, `MessageCatalog`, `TradeService`, and Spring context startup. It currently contains 38 passing tests.
+- Full backend verification should run from the repository root with `docker compose --profile development exec -T backend mvn test`; the current suite covers `AuthService`, `JwtService`, `GoogleAuthService`, `MessageCatalog`, `TradeService`, `AccountService`, `AccountProviderBackfill`, trade import adapters/reader/service, `ApiExceptionHandler`, and Spring context startup. It currently contains 57 passing tests.
 - Run PostgreSQL before backend tests or the backend test context may fail while creating the JPA datasource; `docker compose up -d db` is the focused prerequisite.
 - The development backend runs as UID/GID 1000 to match the host user and avoid root-owned files under `Backend/target/`. If an older container left root-owned output, correct its ownership before retrying host Maven.
 
@@ -39,15 +39,21 @@
 - Journal visual conventions use a charcoal canvas, flat bordered surfaces, cyan for primary actions, green/red only for financial outcomes, and monospace typography for prices/P&L. Avoid adding generic gradients or decorative cards to journal screens.
 - Journal tables must remain horizontally usable on small screens, include an accessible `caption`, and expose status through text as well as color. Dialogs should use `role="dialog"`, `aria-modal`, an accessible label, an overlay, an explicit close button, and Escape-to-close behavior.
 - `NewTradeDialog` currently captures asset, opening price, stop loss, take profit, and quantity locally. The asset field accepts future `assetOptions` and `onAssetSearch` integration; do not add fake API data as a substitute for the eventual market-data service.
+- Accounts own an explicit broker/exchange `AccountProvider` (`SIMPLEFX` or `BITGET`); `broker` is only a display label. New accounts require a provider, and every new trade or file import requires an account with one. Legacy accounts without a provider must be assigned one without changing their ID or existing trades.
+- Trade imports are all-or-nothing per file, require the account currency to match the provider P&L currency (`USD` for SimpleFX, `USDT` for Bitget), and never convert currencies. Add new providers through a `TradeImportAdapter` component and update the glossary and docs.
+- API errors from journal services use `ApiExceptionHandler`, which returns `{"message": "..."}` with the original HTTP status; the frontend reads that message through `apiErrorMessage`.
 - Do not edit `Backend/target/` or `Frontend/dist/`; they are generated build artifacts.
 
 ## Documentation
 
 - `docs/backend-authentication-and-testing.md` documents the authentication flows, message catalog, test coverage, and production considerations. Keep it aligned with changes to auth behavior.
+- `docs/trades.md` documents trade lifecycle and API behavior, and `docs/trade-import.md` documents supported broker exports, import rules, and limitations. Keep both aligned with provider or import changes.
+- `GLOSSARY.md` defines provider, legacy account, and import currency terminology; update it when changing those domain rules.
 
 ## Known Follow-ups
 
 - Move the JWT signing secret and database credentials out of source-controlled configuration before production.
 - Remove the duplicate `spring-boot-devtools` dependency declaration in `Backend/pom.xml`.
 - Add integration tests for `AuthController`, cookie behavior, JWT filtering, PostgreSQL constraints, and concurrent registration.
+- Add controller-level tests for `TradeImportController` (multipart upload, 10 MB limit, unauthorized access) and an import idempotency strategy to avoid duplicating trades when the same export is uploaded twice.
 - Connect `NewTradeDialog` to a backend trade endpoint and a market-data API before treating its submit action as persistence.

@@ -3,10 +3,11 @@ import { HeaderContext } from '../../hook/HeaderContext';
 import NewTradeDialog from '../../component/journal/NewTradeDialog';
 import CloseTradeDialog from '../../component/journal/CloseTradeDialog';
 import TradeDetailDialog from '../../component/journal/TradeDetailDialog';
+import { ACCOUNT_SELECTION_EVENT, getAccounts, getSelectedAccountId, resolveSelectedAccountId } from '../../api/accounts';
 import { getOpenTrades, type Trade } from '../../api/trades';
 
 function formatNumber(value: number | null) {
-  return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 8 });
+  return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 9 });
 }
 
 function duration(openAt: string) {
@@ -18,6 +19,7 @@ function OpenTrades() {
   const { setHeader } = useContext(HeaderContext);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [reloadVersion, setReloadVersion] = useState(0);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(() => getSelectedAccountId());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [closeTarget, setCloseTarget] = useState<Trade | null>(null);
@@ -25,19 +27,50 @@ function OpenTrades() {
 
   useEffect(() => {
     let active = true;
-    getOpenTrades()
-      .then((data) => { if (active) setTrades(data); })
-      .catch(() => { if (active) setError('Could not load open trades.'); })
-      .finally(() => { if (active) setIsLoading(false); });
+    const load = async () => {
+      try {
+        const accountId = resolveSelectedAccountId(await getAccounts());
+        if (!active) return;
+        if (accountId !== selectedAccountId) {
+          setTrades([]);
+          setSelectedAccountId(accountId);
+          return;
+        }
+        if (!accountId) {
+          setTrades([]);
+          return;
+        }
+        setIsLoading(true);
+        const tradeData = await getOpenTrades(accountId);
+        if (active) setTrades(tradeData);
+      } catch {
+        if (active) setError('Could not load open trades.');
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+    void load();
     return () => { active = false; };
-  }, [reloadVersion]);
+  }, [reloadVersion, selectedAccountId]);
 
   useEffect(() => {
-    setHeader({ title: 'Open trades', subtitle: 'Monitor active exposure before it becomes history.', action: <NewTradeDialog onCreated={() => { setIsLoading(true); setReloadVersion((version) => version + 1); }} /> });
+    const handleAccountSelection = () => {
+      setIsLoading(true);
+      setError('');
+      setSelectedAccountId(getSelectedAccountId());
+      setCloseTarget(null);
+      setDetailTarget(null);
+    };
+    window.addEventListener(ACCOUNT_SELECTION_EVENT, handleAccountSelection);
+    return () => window.removeEventListener(ACCOUNT_SELECTION_EVENT, handleAccountSelection);
+  }, []);
+
+  useEffect(() => {
+    setHeader({ title: 'Open trades', subtitle: 'Monitor active exposure before it becomes history.', action: <NewTradeDialog onCreated={() => { setIsLoading(true); setError(''); setReloadVersion((version) => version + 1); }} /> });
   }, [setHeader]);
 
   const unrealizedPnl = trades.reduce((sum, trade) => sum + trade.pnl, 0);
-  const refreshTrades = () => { setIsLoading(true); setReloadVersion((version) => version + 1); };
+  const refreshTrades = () => { setIsLoading(true); setError(''); setReloadVersion((version) => version + 1); };
 
   return <section className="space-y-6">
     <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--border)] lg:grid-cols-3">{[['Open positions', String(trades.length), 'neutral'], ['Unrealized P&L', `${unrealizedPnl >= 0 ? '+' : '-'}$${Math.abs(unrealizedPnl).toFixed(2)}`, unrealizedPnl >= 0 ? 'positive' : 'negative'], ['Total exposure', '—', 'neutral']].map(([label, value, tone]) => <div key={label} className="bg-[var(--surface)] p-4 sm:p-5"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text3)]">{label}</p><p className={`journal-number mt-3 text-xl font-semibold ${tone === 'positive' ? 'text-[var(--green)]' : tone === 'negative' ? 'text-[var(--red)]' : 'text-[var(--text)]'}`}>{value}</p></div>)}</div>

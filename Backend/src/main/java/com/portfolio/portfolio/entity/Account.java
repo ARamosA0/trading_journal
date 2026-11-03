@@ -1,11 +1,10 @@
 package com.portfolio.portfolio.entity;
+
 import jakarta.persistence.*;
-import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 
 @Entity
 @Table(name = "account")
@@ -14,29 +13,32 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NoArgsConstructor
 public class Account {
 
-    @Id
-    @Column(length = 26)
-    private String id;
+  @Id
+  @Column(length = 26)
+  private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
 
-    private String name;
+  private String name;
 
-    private String broker;
+  private String broker;
 
-    @Column(precision = 15, scale = 2)
-    private BigDecimal balance;
+  @Enumerated(EnumType.STRING)
+  @Column(length = 32)
+  private AccountProvider provider;
 
-    @Column(length = 3)
-    private String currency;
+  @Column(precision = 15, scale = 2)
+  private BigDecimal balance;
 
-    @CreationTimestamp
-    private LocalDateTime createdAt;
+  @Column(length = 4)
+  private String currency;
 
-    @Enumerated(EnumType.STRING)
-    private AccountState state;
+  @CreationTimestamp private LocalDateTime createdAt;
 
-    private LocalDateTime deletedAt;
+  @Enumerated(EnumType.STRING)
+  private AccountState state;
+
+  private LocalDateTime deletedAt;
 }

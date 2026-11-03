@@ -5,7 +5,7 @@ import TradingCalendar from '../../component/charts/calendar';
 import NewTradeDialog from '../../component/journal/NewTradeDialog';
 import SessionBreakdown from '../../component/journal/SessionBreakdown';
 import PerformanceByPair from '../../component/journal/PerformanceByPair';
-import { getAccounts, getSelectedAccountId, selectAccount, ACCOUNT_SELECTION_EVENT, type Account } from '../../api/accounts';
+import { ACCOUNT_SELECTION_EVENT, getAccounts, getSelectedAccountId, resolveSelectedAccountId, type Account } from '../../api/accounts';
 import { getTrades, type Trade } from '../../api/trades';
 
 const periods = ['Day', 'Week', 'Month', 'Year'];
@@ -57,33 +57,52 @@ function Dashboard() {
     setHeader({
       title: 'Dashboard',
       subtitle: 'A clear read on your trading performance.',
-       action: <NewTradeDialog onCreated={() => setReloadVersion((version) => version + 1)} />,
+      action: <NewTradeDialog onCreated={() => { setIsLoading(true); setError(''); setReloadVersion((version) => version + 1); }} />,
       action2: <button type="button">Export</button>,
     });
   }, [setHeader]);
 
   useEffect(() => {
     let active = true;
-    Promise.all([getAccounts(), getTrades()])
-      .then(([accountData, tradeData]) => {
+    const load = async () => {
+      try {
+        const accountData = await getAccounts();
         if (!active) return;
         setAccounts(accountData);
+        const accountId = resolveSelectedAccountId(accountData);
+        if (accountId !== selectedAccountId) {
+          setTrades([]);
+          setSelectedAccountId(accountId);
+          return;
+        }
+        if (!accountId) {
+          setTrades([]);
+          return;
+        }
+        setIsLoading(true);
+        const tradeData = await getTrades(accountId);
+        if (!active) return;
         setTrades(tradeData);
-        const storedId = getSelectedAccountId();
-        const accountId = accountData.some((account) => account.id === storedId) ? storedId : accountData[0]?.id ?? null;
         setSelectedAccountId(accountId);
-        if (accountId && accountId !== storedId) selectAccount(accountId);
-      })
-      .catch(() => { if (active) setError('Could not load dashboard data.'); })
-      .finally(() => { if (active) setIsLoading(false); });
-
-    const handleAccountSelection = () => setSelectedAccountId(getSelectedAccountId());
-    window.addEventListener(ACCOUNT_SELECTION_EVENT, handleAccountSelection);
-    return () => {
-      active = false;
-      window.removeEventListener(ACCOUNT_SELECTION_EVENT, handleAccountSelection);
+      } catch {
+        if (active) setError('Could not load dashboard data.');
+      } finally {
+        if (active) setIsLoading(false);
+      }
     };
-  }, [reloadVersion]);
+    void load();
+    return () => { active = false; };
+  }, [reloadVersion, selectedAccountId]);
+
+  useEffect(() => {
+    const handleAccountSelection = () => {
+      setIsLoading(true);
+      setError('');
+      setSelectedAccountId(getSelectedAccountId());
+    };
+    window.addEventListener(ACCOUNT_SELECTION_EVENT, handleAccountSelection);
+    return () => window.removeEventListener(ACCOUNT_SELECTION_EVENT, handleAccountSelection);
+  }, []);
 
   const periodTrades = useMemo(
     () => trades.filter((trade) => trade.accountId === selectedAccountId && isInPeriod(trade.openAt, activePeriod)),

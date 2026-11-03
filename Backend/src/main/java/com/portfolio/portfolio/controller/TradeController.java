@@ -18,48 +18,58 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/trades")
 @RequiredArgsConstructor
 public class TradeController {
-    private final TradeService tradeService;
+  private final TradeService tradeService;
 
-    @GetMapping
-    public List<TradeResponse> findAll(Authentication authentication) {
-        return tradeService.findAll(authentication.getName());
-    }
+  @GetMapping
+  public List<TradeResponse> findAll(
+      Authentication authentication, @RequestParam("accountId") String accountId) {
+    return tradeService.findAll(authentication.getName(), accountId);
+  }
 
-    @GetMapping("/open")
-    public List<TradeResponse> findOpen(Authentication authentication) {
-        return tradeService.findOpen(authentication.getName());
-    }
+  @GetMapping("/open")
+  public List<TradeResponse> findOpen(
+      Authentication authentication, @RequestParam("accountId") String accountId) {
+    return tradeService.findOpen(authentication.getName(), accountId);
+  }
 
-    @GetMapping("/{id}")
-    public TradeResponse findById(Authentication authentication, @PathVariable String id) {
-        return tradeService.findById(authentication.getName(), id);
-    }
+  @GetMapping("/{id}")
+  public TradeResponse findById(Authentication authentication, @PathVariable String id) {
+    return tradeService.findById(authentication.getName(), id);
+  }
 
-    @PostMapping
-    public ResponseEntity<TradeResponse> create(Authentication authentication, @RequestBody CreateTradeRequest request) {
-        TradeResponse response = tradeService.create(authentication.getName(), request);
-        return ResponseEntity.created(URI.create("/api/trades/" + response.id())).body(response);
-    }
+  @PostMapping
+  public ResponseEntity<TradeResponse> create(
+      Authentication authentication, @RequestBody CreateTradeRequest request) {
+    TradeResponse response = tradeService.create(authentication.getName(), request);
+    return ResponseEntity.created(URI.create("/api/trades/" + response.id())).body(response);
+  }
 
-    @PutMapping("/{id}")
-    public TradeResponse update(Authentication authentication, @PathVariable String id, @RequestBody UpdateTradeRequest request) {
-        return tradeService.update(authentication.getName(), id, request);
-    }
+  @PutMapping("/{id}")
+  public TradeResponse update(
+      Authentication authentication,
+      @PathVariable String id,
+      @RequestBody UpdateTradeRequest request) {
+    return tradeService.update(authentication.getName(), id, request);
+  }
 
-    @PatchMapping("/{id}/close")
-    public TradeResponse close(Authentication authentication, @PathVariable String id, @RequestBody CloseTradeRequest request) {
-        return tradeService.close(authentication.getName(), id, request);
-    }
+  @PatchMapping("/{id}/close")
+  public TradeResponse close(
+      Authentication authentication,
+      @PathVariable String id,
+      @RequestBody CloseTradeRequest request) {
+    return tradeService.close(authentication.getName(), id, request);
+  }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(Authentication authentication, @PathVariable String id) {
-        tradeService.delete(authentication.getName(), id);
-        return ResponseEntity.noContent().build();
-    }
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> delete(Authentication authentication, @PathVariable String id) {
+    tradeService.delete(authentication.getName(), id);
+    return ResponseEntity.noContent().build();
+  }
 }

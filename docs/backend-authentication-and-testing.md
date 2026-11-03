@@ -309,7 +309,7 @@ un correo que Google no marca como verificado.
 
 ### 9.4 `TradeServiceTest`
 
-Contiene las pruebas existentes del servicio de operaciones.
+Contiene las pruebas del servicio de operaciones, incluidas las reglas de cuenta con proveedor, la selección de la primera cuenta activa con proveedor, el cierre completo/parcial, el P&L acumulado y el borrado lógico.
 
 ### 9.5 `MessageCatalogTest`
 
@@ -323,6 +323,17 @@ Cubre:
 ### 9.6 Test de contexto
 
 `PortfolioApplicationTests` verifica que el contexto Spring pueda iniciar con PostgreSQL y crear los repositorios y beans principales.
+
+### 9.7 Cuentas, proveedores e importación
+
+| Clase | Cobertura |
+| --- | --- |
+| `AccountServiceTest` | Alta con proveedor, moneda `USDT`, rechazo sin proveedor y asignación a cuentas heredadas. |
+| `AccountProviderBackfillTest` | Backfill de etiquetas `SimpleFX` y `Bitget`. |
+| `TradeImportAdapterTest` | Mapeo de columnas, direcciones y P&L de SimpleFX y Bitget. |
+| `TradeImportFileReaderTest` | CSV con BOM, XLSX, cabeceras duplicadas y filas inconsistentes. |
+| `TradeImportServiceTest` | Persistencia, atomicidad, cuenta sin proveedor y moneda incompatible. |
+| `ApiExceptionHandlerTest` | Respuestas `{"message": ...}` con el código HTTP original. |
 
 ## 10. Cómo ejecutar las pruebas
 
@@ -346,7 +357,7 @@ Para ejecutar una clase específica:
 
 Resultado actual de la suite implementada:
 
-- 38 tests ejecutados.
+- 57 tests ejecutados.
 - 0 fallos.
 - 0 errores.
 - 0 tests omitidos.

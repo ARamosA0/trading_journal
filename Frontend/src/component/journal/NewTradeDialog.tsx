@@ -23,11 +23,11 @@ type NewTradeDialogProps = {
   onCreated?: () => void | Promise<void>;
 };
 
-const priceStep = '0.00001';
+const priceStep = '0.000000001';
 
 function normalizePrice(value: string) {
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed.toFixed(5) : value;
+  return Number.isFinite(parsed) ? parsed.toFixed(9) : value;
 }
 
 const emptyTrade: TradeForm = {
@@ -147,7 +147,7 @@ export default function NewTradeDialog({ assetOptions = [], onAssetSearch, onCre
               </label>
               <label className="text-xs font-medium text-[var(--text2)]">
                 Precio de apertura
-                <input required type="number" min="0" step={priceStep} value={form.entryPrice} onChange={(event) => updateField('entryPrice', event.target.value)} onBlur={() => updateField('entryPrice', normalizePrice(form.entryPrice))} placeholder="0.00000" className="journal-number mt-2" />
+                <input required type="number" min="0" step={priceStep} value={form.entryPrice} onChange={(event) => updateField('entryPrice', event.target.value)} onBlur={() => updateField('entryPrice', normalizePrice(form.entryPrice))} placeholder="0.000000000" className="journal-number mt-2" />
               </label>
               <label className="text-xs font-medium text-[var(--text2)]">
                 Cantidad

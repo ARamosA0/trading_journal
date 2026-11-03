@@ -25,11 +25,15 @@ export const auth = axios.create({
 
 export const api = axios.create({
     baseURL: API_BASE_URL,
-    headers: {
-        "Content-Type": "application/json"
-    },
     withCredentials: true
 });
+
+export function apiErrorMessage(error: unknown, fallback: string) {
+    if (axios.isAxiosError<{ message?: string }>(error)) {
+        return error.response?.data?.message || fallback;
+    }
+    return fallback;
+}
 
 export function refreshSession(): Promise<AuthResponse> {
     if (!refreshPromise) {

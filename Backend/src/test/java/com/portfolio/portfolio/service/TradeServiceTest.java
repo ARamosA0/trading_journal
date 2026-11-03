@@ -13,6 +13,7 @@ import com.portfolio.portfolio.dto.CloseTradeRequest;
 import com.portfolio.portfolio.dto.CreateTradeRequest;
 import com.portfolio.portfolio.dto.UpdateTradeRequest;
 import com.portfolio.portfolio.entity.Account;
+import com.portfolio.portfolio.entity.AccountProvider;
 import com.portfolio.portfolio.entity.AccountState;
 import com.portfolio.portfolio.entity.Trade;
 import com.portfolio.portfolio.entity.TradeDirection;
@@ -23,6 +24,7 @@ import com.portfolio.portfolio.repository.TradeRepository;
 import com.portfolio.portfolio.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,187 +37,309 @@ import org.springframework.web.server.ResponseStatusException;
 @ExtendWith(MockitoExtension.class)
 class TradeServiceTest {
 
-    @Mock
-    private TradeRepository tradeRepository;
+  @Mock private TradeRepository tradeRepository;
 
-    @Mock
-    private AccountRepository accountRepository;
+  @Mock private AccountRepository accountRepository;
 
-    @Mock
-    private UserRepository userRepository;
+  @Mock private UserRepository userRepository;
 
-    @InjectMocks
-    private TradeService tradeService;
+  @InjectMocks private TradeService tradeService;
 
-    private User user;
-    private Account account;
+  private User user;
+  private Account account;
 
-    @BeforeEach
-    void setUp() {
-        user = User.builder()
-                .id("01JUSER")
-                .username("trader")
-                .email("trader@example.com")
-                .role("USER")
-                .build();
+  @BeforeEach
+  void setUp() {
+    user =
+        User.builder()
+            .id("01JUSER")
+            .username("trader")
+            .email("trader@example.com")
+            .role("USER")
+            .build();
 
-        account = new Account();
-        account.setId("01JACCOUNT");
-        account.setUser(user);
-        account.setName("Main account");
-        account.setState(AccountState.ACTIVE);
-    }
+    account = new Account();
+    account.setId("01JACCOUNT");
+    account.setUser(user);
+    account.setName("Main account");
+    account.setBroker("SimpleFX");
+    account.setProvider(AccountProvider.SIMPLEFX);
+    account.setState(AccountState.ACTIVE);
+  }
 
-    @Test
-    void createsOpenTradeAndUsesActiveAccount() {
-        CreateTradeRequest request = createRequest();
-        when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
-        when(accountRepository.findFirstByUser_IdAndStateAndDeletedAtIsNullOrderByCreatedAtAsc(
-                user.getId(), AccountState.ACTIVE)).thenReturn(Optional.of(account));
-        when(tradeRepository.save(any(Trade.class))).thenAnswer(invocation -> invocation.getArgument(0));
+  @Test
+  void createsOpenTradeAndUsesActiveAccount() {
+    CreateTradeRequest request = createRequest();
+    when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
+    request.setAccountId(account.getId());
+    when(accountRepository.findByIdAndUser_IdAndDeletedAtIsNull(account.getId(), user.getId()))
+        .thenReturn(Optional.of(account));
+    when(tradeRepository.save(any(Trade.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
-        var response = tradeService.create("trader@example.com", request);
+    var response = tradeService.create("trader@example.com", request);
 
-        assertEquals("EUR/USD", response.symbol());
-        assertEquals(TradeDirection.LONG, response.direction());
-        assertEquals(TradeState.OPEN, response.status());
-        assertEquals(account.getId(), response.accountId());
-        assertEquals(new BigDecimal("1.5"), response.quantity());
-        verify(tradeRepository).save(any(Trade.class));
-    }
+    assertEquals("EUR/USD", response.symbol());
+    assertEquals(TradeDirection.LONG, response.direction());
+    assertEquals(TradeState.OPEN, response.status());
+    assertEquals(account.getId(), response.accountId());
+    assertEquals(new BigDecimal("1.5"), response.quantity());
+    verify(tradeRepository).save(any(Trade.class));
+  }
 
-    @Test
-    void createsDefaultAccountWhenUserHasNoActiveAccount() {
-        CreateTradeRequest request = createRequest();
-        when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
-        when(accountRepository.findFirstByUser_IdAndStateAndDeletedAtIsNullOrderByCreatedAtAsc(
-                user.getId(), AccountState.ACTIVE)).thenReturn(Optional.empty());
-        when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(tradeRepository.save(any(Trade.class))).thenAnswer(invocation -> invocation.getArgument(0));
+  @Test
+  void findAllReturnsOnlyTheOwnedAccountsTrades() {
+    Trade trade = openTrade(new BigDecimal("1.0"));
+    when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
+    when(accountRepository.findByIdAndUser_IdAndDeletedAtIsNull(account.getId(), user.getId()))
+        .thenReturn(Optional.of(account));
+    when(tradeRepository.findByAccount_IdAndDeletedAtIsNullOrderByOpenAtDesc(account.getId()))
+        .thenReturn(List.of(trade));
 
-        tradeService.create("trader@example.com", request);
+    var trades = tradeService.findAll("trader@example.com", account.getId());
 
-        verify(accountRepository).save(any(Account.class));
-    }
+    assertEquals(1, trades.size());
+    assertEquals(account.getId(), trades.get(0).accountId());
+    verify(tradeRepository).findByAccount_IdAndDeletedAtIsNullOrderByOpenAtDesc(account.getId());
+  }
 
-    @Test
-    void closesTradeCompletely() {
-        Trade trade = openTrade(new BigDecimal("1.5"));
-        whenTradeCanBeFound(trade);
-        when(tradeRepository.save(any(Trade.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        CloseTradeRequest request = closeRequest("1.08920", "1.5", "240");
+  @Test
+  void findOpenReturnsOnlyTheOwnedAccountsOpenTrades() {
+    Trade trade = openTrade(new BigDecimal("1.0"));
+    when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
+    when(accountRepository.findByIdAndUser_IdAndDeletedAtIsNull(account.getId(), user.getId()))
+        .thenReturn(Optional.of(account));
+    when(tradeRepository.findByAccount_IdAndTradeStateAndDeletedAtIsNullOrderByOpenAtDesc(
+            account.getId(), TradeState.OPEN))
+        .thenReturn(List.of(trade));
 
-        var response = tradeService.close("trader@example.com", trade.getId(), request);
+    var trades = tradeService.findOpen("trader@example.com", account.getId());
 
-        assertEquals(TradeState.CLOSE, response.status());
-        assertEquals(new BigDecimal("1.08920"), response.exitPrice());
-        assertEquals(new BigDecimal("240"), response.pnl());
-        assertNotNull(response.closeAt());
-        assertEquals(new BigDecimal("1.5"), response.quantity());
-    }
+    assertEquals(1, trades.size());
+    assertEquals(TradeState.OPEN, trades.get(0).status());
+    verify(tradeRepository)
+        .findByAccount_IdAndTradeStateAndDeletedAtIsNullOrderByOpenAtDesc(
+            account.getId(), TradeState.OPEN);
+  }
 
-    @Test
-    void partiallyClosesTradeAndMovesStopLoss() {
-        Trade trade = openTrade(new BigDecimal("2.0"));
-        trade.setPnl(new BigDecimal("10"));
-        whenTradeCanBeFound(trade);
-        when(tradeRepository.save(any(Trade.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        CloseTradeRequest request = closeRequest("1.09200", "0.75", "35");
-        request.setMoveStopLoss(true);
-        request.setStopLoss(new BigDecimal("1.09000"));
+  @Test
+  void rejectsTradeListingForForeignAccount() {
+    when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
+    when(accountRepository.findByIdAndUser_IdAndDeletedAtIsNull("FOREIGN", user.getId()))
+        .thenReturn(Optional.empty());
 
-        var response = tradeService.close("trader@example.com", trade.getId(), request);
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> tradeService.findAll("trader@example.com", "FOREIGN"));
 
-        assertEquals(TradeState.OPEN, response.status());
-        assertEquals(new BigDecimal("1.25"), response.quantity());
-        assertEquals(new BigDecimal("45"), response.pnl());
-        assertEquals(new BigDecimal("1.09000"), response.stopLoss());
-        assertNull(response.closeAt());
-    }
+    assertEquals(404, exception.getStatusCode().value());
+    verify(tradeRepository, never()).findByAccount_IdAndDeletedAtIsNullOrderByOpenAtDesc("FOREIGN");
+  }
 
-    @Test
-    void rejectsCloseQuantityGreaterThanRemainingQuantity() {
-        Trade trade = openTrade(new BigDecimal("1.0"));
-        whenTradeCanBeFound(trade);
-        CloseTradeRequest request = closeRequest("1.09", "1.01", "0");
+  @Test
+  void rejectsTradeListingForDeletedAccount() {
+    when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
+    when(accountRepository.findByIdAndUser_IdAndDeletedAtIsNull("DELETED", user.getId()))
+        .thenReturn(Optional.empty());
 
-        assertThrows(ResponseStatusException.class,
-                () -> tradeService.close("trader@example.com", trade.getId(), request));
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> tradeService.findOpen("trader@example.com", "DELETED"));
 
-        verify(tradeRepository, never()).save(any(Trade.class));
-    }
+    assertEquals(404, exception.getStatusCode().value());
+    verify(tradeRepository, never())
+        .findByAccount_IdAndTradeStateAndDeletedAtIsNullOrderByOpenAtDesc(
+            "DELETED", TradeState.OPEN);
+  }
 
-    @Test
-    void editsTradePlanWithoutChangingCloseState() {
-        Trade trade = openTrade(new BigDecimal("1.0"));
-        trade.setTradeState(TradeState.CLOSE);
-        whenTradeCanBeFound(trade);
-        when(tradeRepository.save(any(Trade.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        UpdateTradeRequest request = new UpdateTradeRequest();
-        request.setSymbol("GBP/USD");
-        request.setDirection(TradeDirection.SHORT);
-        request.setEntryPrice(new BigDecimal("1.27000"));
-        request.setQuantity(new BigDecimal("0.5"));
-        request.setStopLoss(new BigDecimal("1.28000"));
-        request.setTakeProfit(new BigDecimal("1.25000"));
+  @Test
+  void returnsEmptyListsWhenSelectedAccountHasNoTrades() {
+    when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
+    when(accountRepository.findByIdAndUser_IdAndDeletedAtIsNull(account.getId(), user.getId()))
+        .thenReturn(Optional.of(account));
+    when(tradeRepository.findByAccount_IdAndDeletedAtIsNullOrderByOpenAtDesc(account.getId()))
+        .thenReturn(List.of());
+    when(tradeRepository.findByAccount_IdAndTradeStateAndDeletedAtIsNullOrderByOpenAtDesc(
+            account.getId(), TradeState.OPEN))
+        .thenReturn(List.of());
 
-        var response = tradeService.update("trader@example.com", trade.getId(), request);
+    assertEquals(0, tradeService.findAll("trader@example.com", account.getId()).size());
+    assertEquals(0, tradeService.findOpen("trader@example.com", account.getId()).size());
+  }
 
-        assertEquals("GBP/USD", response.symbol());
-        assertEquals(TradeDirection.SHORT, response.direction());
-        assertEquals(TradeState.CLOSE, response.status());
-        assertEquals(new BigDecimal("0.5"), response.quantity());
-    }
+  @Test
+  void createsTradeUsingFirstActiveProviderAccountWhenAccountIsNotSpecified() {
+    CreateTradeRequest request = createRequest();
+    when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
+    when(accountRepository
+            .findFirstByUser_IdAndStateAndDeletedAtIsNullAndProviderIsNotNullOrderByCreatedAtAsc(
+                user.getId(), AccountState.ACTIVE))
+        .thenReturn(Optional.of(account));
+    when(tradeRepository.save(any(Trade.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
-    @Test
-    void softDeletesTradeAndKeepsPhysicalEntity() {
-        Trade trade = openTrade(new BigDecimal("1.0"));
-        whenTradeCanBeFound(trade);
-        when(tradeRepository.save(any(Trade.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    var response = tradeService.create("trader@example.com", request);
 
-        tradeService.delete("trader@example.com", trade.getId());
+    assertEquals(account.getId(), response.accountId());
+    verify(tradeRepository).save(any(Trade.class));
+  }
 
-        assertNotNull(trade.getDeletedAt());
-        verify(tradeRepository).save(trade);
-    }
+  @Test
+  void rejectsTradeCreationWhenNoProviderAccountExists() {
+    CreateTradeRequest request = createRequest();
+    when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
+    when(accountRepository
+            .findFirstByUser_IdAndStateAndDeletedAtIsNullAndProviderIsNotNullOrderByCreatedAtAsc(
+                user.getId(), AccountState.ACTIVE))
+        .thenReturn(Optional.empty());
 
-    private CreateTradeRequest createRequest() {
-        CreateTradeRequest request = new CreateTradeRequest();
-        request.setSymbol("eur/usd");
-        request.setDirection(TradeDirection.LONG);
-        request.setEntryPrice(new BigDecimal("1.08540"));
-        request.setQuantity(new BigDecimal("1.5"));
-        request.setStopLoss(new BigDecimal("1.08000"));
-        request.setTakeProfit(new BigDecimal("1.09500"));
-        return request;
-    }
+    assertThrows(
+        ResponseStatusException.class, () -> tradeService.create("trader@example.com", request));
 
-    private CloseTradeRequest closeRequest(String exitPrice, String quantity, String pnl) {
-        CloseTradeRequest request = new CloseTradeRequest();
-        request.setExitPrice(new BigDecimal(exitPrice));
-        request.setQuantity(new BigDecimal(quantity));
-        request.setPnl(new BigDecimal(pnl));
-        return request;
-    }
+    verify(accountRepository, never()).save(any(Account.class));
+    verify(tradeRepository, never()).save(any(Trade.class));
+  }
 
-    private Trade openTrade(BigDecimal quantity) {
-        Trade trade = new Trade();
-        trade.setId("01JTRADE");
-        trade.setAccount(account);
-        trade.setSymbol("EUR/USD");
-        trade.setMarket("FOREX");
-        trade.setDirection(TradeDirection.LONG);
-        trade.setEntryPrice(new BigDecimal("1.08540"));
-        trade.setQuantity(quantity);
-        trade.setPnl(BigDecimal.ZERO);
-        trade.setOpenAt(LocalDateTime.now().minusHours(2));
-        trade.setTradeState(TradeState.OPEN);
-        return trade;
-    }
+  @Test
+  void rejectsTradeCreationForLegacyAccountWithoutProvider() {
+    CreateTradeRequest request = createRequest();
+    request.setAccountId(account.getId());
+    account.setProvider(null);
+    when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
+    when(accountRepository.findByIdAndUser_IdAndDeletedAtIsNull(account.getId(), user.getId()))
+        .thenReturn(Optional.of(account));
 
-    private void whenTradeCanBeFound(Trade trade) {
-        when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
-        when(tradeRepository.findByIdAndAccount_User_IdAndDeletedAtIsNull(trade.getId(), user.getId()))
-                .thenReturn(Optional.of(trade));
-    }
+    assertThrows(
+        ResponseStatusException.class, () -> tradeService.create("trader@example.com", request));
+
+    verify(tradeRepository, never()).save(any(Trade.class));
+  }
+
+  @Test
+  void closesTradeCompletely() {
+    Trade trade = openTrade(new BigDecimal("1.5"));
+    whenTradeCanBeFound(trade);
+    when(tradeRepository.save(any(Trade.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    CloseTradeRequest request = closeRequest("1.08920", "1.5", "240");
+
+    var response = tradeService.close("trader@example.com", trade.getId(), request);
+
+    assertEquals(TradeState.CLOSE, response.status());
+    assertEquals(new BigDecimal("1.089200000"), response.exitPrice());
+    assertEquals(new BigDecimal("240"), response.pnl());
+    assertNotNull(response.closeAt());
+    assertEquals(new BigDecimal("1.5"), response.quantity());
+  }
+
+  @Test
+  void partiallyClosesTradeAndMovesStopLoss() {
+    Trade trade = openTrade(new BigDecimal("2.0"));
+    trade.setPnl(new BigDecimal("10"));
+    whenTradeCanBeFound(trade);
+    when(tradeRepository.save(any(Trade.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    CloseTradeRequest request = closeRequest("1.09200", "0.75", "35");
+    request.setMoveStopLoss(true);
+    request.setStopLoss(new BigDecimal("1.09000"));
+
+    var response = tradeService.close("trader@example.com", trade.getId(), request);
+
+    assertEquals(TradeState.OPEN, response.status());
+    assertEquals(new BigDecimal("1.25"), response.quantity());
+    assertEquals(new BigDecimal("45"), response.pnl());
+    assertEquals(new BigDecimal("1.090000000"), response.stopLoss());
+    assertNull(response.closeAt());
+  }
+
+  @Test
+  void rejectsCloseQuantityGreaterThanRemainingQuantity() {
+    Trade trade = openTrade(new BigDecimal("1.0"));
+    whenTradeCanBeFound(trade);
+    CloseTradeRequest request = closeRequest("1.09", "1.01", "0");
+
+    assertThrows(
+        ResponseStatusException.class,
+        () -> tradeService.close("trader@example.com", trade.getId(), request));
+
+    verify(tradeRepository, never()).save(any(Trade.class));
+  }
+
+  @Test
+  void editsTradePlanWithoutChangingCloseState() {
+    Trade trade = openTrade(new BigDecimal("1.0"));
+    trade.setTradeState(TradeState.CLOSE);
+    whenTradeCanBeFound(trade);
+    when(tradeRepository.save(any(Trade.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    UpdateTradeRequest request = new UpdateTradeRequest();
+    request.setSymbol("GBP/USD");
+    request.setDirection(TradeDirection.SHORT);
+    request.setEntryPrice(new BigDecimal("1.27000"));
+    request.setQuantity(new BigDecimal("0.5"));
+    request.setStopLoss(new BigDecimal("1.28000"));
+    request.setTakeProfit(new BigDecimal("1.25000"));
+
+    var response = tradeService.update("trader@example.com", trade.getId(), request);
+
+    assertEquals("GBP/USD", response.symbol());
+    assertEquals(TradeDirection.SHORT, response.direction());
+    assertEquals(TradeState.CLOSE, response.status());
+    assertEquals(new BigDecimal("0.5"), response.quantity());
+  }
+
+  @Test
+  void softDeletesTradeAndKeepsPhysicalEntity() {
+    Trade trade = openTrade(new BigDecimal("1.0"));
+    whenTradeCanBeFound(trade);
+    when(tradeRepository.save(any(Trade.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    tradeService.delete("trader@example.com", trade.getId());
+
+    assertNotNull(trade.getDeletedAt());
+    verify(tradeRepository).save(trade);
+  }
+
+  private CreateTradeRequest createRequest() {
+    CreateTradeRequest request = new CreateTradeRequest();
+    request.setSymbol("eur/usd");
+    request.setDirection(TradeDirection.LONG);
+    request.setEntryPrice(new BigDecimal("1.08540"));
+    request.setQuantity(new BigDecimal("1.5"));
+    request.setStopLoss(new BigDecimal("1.08000"));
+    request.setTakeProfit(new BigDecimal("1.09500"));
+    return request;
+  }
+
+  private CloseTradeRequest closeRequest(String exitPrice, String quantity, String pnl) {
+    CloseTradeRequest request = new CloseTradeRequest();
+    request.setExitPrice(new BigDecimal(exitPrice));
+    request.setQuantity(new BigDecimal(quantity));
+    request.setPnl(new BigDecimal(pnl));
+    return request;
+  }
+
+  private Trade openTrade(BigDecimal quantity) {
+    Trade trade = new Trade();
+    trade.setId("01JTRADE");
+    trade.setAccount(account);
+    trade.setSymbol("EUR/USD");
+    trade.setMarket("FOREX");
+    trade.setDirection(TradeDirection.LONG);
+    trade.setEntryPrice(new BigDecimal("1.08540"));
+    trade.setQuantity(quantity);
+    trade.setPnl(BigDecimal.ZERO);
+    trade.setOpenAt(LocalDateTime.now().minusHours(2));
+    trade.setTradeState(TradeState.OPEN);
+    return trade;
+  }
+
+  private void whenTradeCanBeFound(Trade trade) {
+    when(userRepository.findByEmailIgnoreCase("trader@example.com")).thenReturn(Optional.of(user));
+    when(tradeRepository.findByIdAndAccount_User_IdAndDeletedAtIsNull(trade.getId(), user.getId()))
+        .thenReturn(Optional.of(trade));
+  }
 }

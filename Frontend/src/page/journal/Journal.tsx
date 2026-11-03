@@ -2,6 +2,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { HeaderContext } from '../../hook/HeaderContext';
 import NewTradeDialog from '../../component/journal/NewTradeDialog';
 import TradeDetailDialog from '../../component/journal/TradeDetailDialog';
+import { ACCOUNT_SELECTION_EVENT, getAccounts, getSelectedAccountId, resolveSelectedAccountId } from '../../api/accounts';
 import { getTrades, type Trade } from '../../api/trades';
 
 type StatusOption = 'All' | 'Closed' | 'Open';
@@ -17,7 +18,7 @@ function formatDate(value: string) {
 }
 
 function formatNumber(value: number | null) {
-  return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 8 });
+  return value == null ? '—' : value.toLocaleString(undefined, { maximumFractionDigits: 9 });
 }
 
 function Journal() {
@@ -27,20 +28,52 @@ function Journal() {
   const [statusFilter, setStatusFilter] = useState<StatusOption>('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [reloadVersion, setReloadVersion] = useState(0);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(() => getSelectedAccountId());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [detailTarget, setDetailTarget] = useState<Trade | null>(null);
 
   useEffect(() => {
     let active = true;
-    getTrades()
-      .then((data) => { if (active) setTrades(data); })
-      .catch(() => { if (active) setError('Could not load your trades.'); })
-      .finally(() => { if (active) setIsLoading(false); });
+    const load = async () => {
+      try {
+        const accountId = resolveSelectedAccountId(await getAccounts());
+        if (!active) return;
+        if (accountId !== selectedAccountId) {
+          setTrades([]);
+          setSelectedAccountId(accountId);
+          return;
+        }
+        if (!accountId) {
+          setTrades([]);
+          return;
+        }
+        setIsLoading(true);
+        const tradeData = await getTrades(accountId);
+        if (active) setTrades(tradeData);
+      } catch {
+        if (active) setError('Could not load your trades.');
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+    void load();
     return () => { active = false; };
-  }, [reloadVersion]);
+  }, [reloadVersion, selectedAccountId]);
 
-  const refreshTrades = useCallback(() => { setIsLoading(true); setReloadVersion((version) => version + 1); }, []);
+  useEffect(() => {
+    const handleAccountSelection = () => {
+      setIsLoading(true);
+      setError('');
+      setSelectedAccountId(getSelectedAccountId());
+      setCurrentPage(1);
+      setDetailTarget(null);
+    };
+    window.addEventListener(ACCOUNT_SELECTION_EVENT, handleAccountSelection);
+    return () => window.removeEventListener(ACCOUNT_SELECTION_EVENT, handleAccountSelection);
+  }, []);
+
+  const refreshTrades = useCallback(() => { setIsLoading(true); setError(''); setReloadVersion((version) => version + 1); }, []);
 
   useEffect(() => {
     setHeader({

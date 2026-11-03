@@ -7,15 +7,15 @@ type CloseTradeDialogProps = {
   onCancel: () => void;
 };
 
-const priceStep = '0.00001';
+const priceStep = '0.000000001';
 
 function priceValue(value: number | null) {
-  return value == null ? '' : value.toFixed(5);
+  return value == null ? '' : value.toFixed(9);
 }
 
 function normalizePrice(value: string) {
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed.toFixed(5) : value;
+  return Number.isFinite(parsed) ? parsed.toFixed(9) : value;
 }
 
 export default function CloseTradeDialog({ trade, onClosed, onCancel }: CloseTradeDialogProps) {
@@ -89,7 +89,7 @@ export default function CloseTradeDialog({ trade, onClosed, onCancel }: CloseTra
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <fieldset className="sm:col-span-2"><legend className="text-xs font-medium text-[var(--text2)]">Close amount</legend><div className="mt-2 grid grid-cols-2 gap-2"><button type="button" aria-pressed={mode === 'full'} onClick={() => handleModeChange('full')} className={`rounded-lg border px-3 py-2 text-sm ${mode === 'full' ? 'border-[var(--accent)] bg-[var(--accent-dim)] text-[var(--accent)]' : 'border-[var(--border2)] text-[var(--text2)]'}`}>Complete</button><button type="button" aria-pressed={mode === 'partial'} onClick={() => handleModeChange('partial')} className={`rounded-lg border px-3 py-2 text-sm ${mode === 'partial' ? 'border-[var(--accent)] bg-[var(--accent-dim)] text-[var(--accent)]' : 'border-[var(--border2)] text-[var(--text2)]'}`}>Partial</button></div></fieldset>
         <label className="text-xs font-medium text-[var(--text2)]">Exit price<input required type="number" min="0" step={priceStep} value={exitPrice} onChange={(event) => handleExitPriceChange(event.target.value)} onBlur={() => setExitPrice(normalizePrice(exitPrice))} className="journal-number mt-2" /></label>
-        <label className="text-xs font-medium text-[var(--text2)]">Quantity to close<input required type="number" min="0" max={trade.quantity} step={priceStep} value={quantity} onChange={(event) => handleQuantityChange(event.target.value)} disabled={mode === 'full'} className="journal-number mt-2 disabled:opacity-60" /><span className="mt-1 block text-[11px] font-normal text-[var(--text3)]">Remaining: {mode === 'partial' ? Math.max(0, trade.quantity - Number(quantity || 0)) : 0}</span></label>
+        <label className="text-xs font-medium text-[var(--text2)]">Quantity to close<input required type="number" min="0" max={trade.quantity} step="any" value={quantity} onChange={(event) => handleQuantityChange(event.target.value)} disabled={mode === 'full'} className="journal-number mt-2 disabled:opacity-60" /><span className="mt-1 block text-[11px] font-normal text-[var(--text3)]">Remaining: {mode === 'partial' ? Math.max(0, trade.quantity - Number(quantity || 0)) : 0}</span></label>
         <label className="text-xs font-medium text-[var(--text2)] sm:col-span-2">Realized P&amp;L<input required type="number" step="any" value={pnl} onChange={(event) => setPnl(event.target.value)} className="journal-number mt-2" /></label>
         <label className="flex items-center gap-3 text-sm text-[var(--text2)] sm:col-span-2"><input type="checkbox" checked={moveStopLoss} onChange={(event) => setMoveStopLoss(event.target.checked)} className="h-4 w-4 accent-[var(--accent)]" /> Move stop loss after this execution</label>
         {moveStopLoss && <label className="text-xs font-medium text-[var(--text2)] sm:col-span-2">New stop loss<input required type="number" min="0" step={priceStep} value={stopLoss} onChange={(event) => setStopLoss(event.target.value)} onBlur={() => setStopLoss(normalizePrice(stopLoss))} className="journal-number mt-2" /></label>}

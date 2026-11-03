@@ -36,7 +36,11 @@ Las clases principales son:
 
 El usuario se obtiene del principal autenticado, cuyo nombre es el correo incluido en el JWT. Las consultas usan la relación `trade.account.user.id`; por eso un usuario no puede acceder a trades de otra cuenta.
 
-Si un usuario crea un trade sin indicar `accountId`, se usa su primera cuenta activa. Si no tiene una, el servicio crea `Main account` en USD para no bloquear la primera operación.
+Regla de cuenta: todo trade nuevo debe pertenecer a una cuenta con un proveedor soportado (`SIMPLEFX` o `BITGET`). Si se crea un trade sin indicar `accountId`, se usa la primera cuenta activa que tenga proveedor. Si no existe, la API responde `400` y no crea cuentas automáticamente. Las cuentas heredadas sin proveedor conservan sus trades, pero no admiten trades nuevos ni importaciones hasta que se les asigne un proveedor.
+
+Los errores de la API de trades y cuentas devuelven un cuerpo estable `{"message": "..."}` generado por `ApiExceptionHandler`. La pantalla de cuentas muestra ese mensaje cuando una operación falla.
+
+La importación de historiales de SimpleFX y Bitget se documenta en `docs/trade-import.md`.
 
 ## 4. Endpoints
 
@@ -45,18 +49,18 @@ Todos los endpoints requieren el access token JWT en `Authorization: Bearer <tok
 ### 4.1 Listar trades
 
 ```http
-GET /api/trades
+GET /api/trades?accountId=01JACCOUNT...
 ```
 
-Devuelve los trades del usuario que no tienen `deletedAt`.
+Devuelve los trades no eliminados de la cuenta indicada. La cuenta debe pertenecer al usuario autenticado y no estar eliminada; una cuenta inexistente, eliminada o de otro usuario responde `404`.
 
 ### 4.2 Listar trades abiertos
 
 ```http
-GET /api/trades/open
+GET /api/trades/open?accountId=01JACCOUNT...
 ```
 
-Devuelve únicamente los trades con estado `OPEN`. Los trades con cierre parcial siguen apareciendo aquí mientras conserven cantidad restante.
+Devuelve únicamente los trades no eliminados con estado `OPEN` de la cuenta indicada. La cuenta debe pertenecer al usuario autenticado y no estar eliminada. Los trades con cierre parcial siguen apareciendo aquí mientras conserven cantidad restante.
 
 ### 4.3 Crear un trade
 
@@ -76,7 +80,7 @@ Content-Type: application/json
 }
 ```
 
-`symbol`, `direction`, `entryPrice` y `quantity` son obligatorios. El servicio normaliza el símbolo a mayúsculas y establece `status=OPEN`, `openAt`, `createdAt` y `pnl=0`.
+`symbol`, `direction`, `entryPrice` y `quantity` son obligatorios. El servicio normaliza el símbolo a mayúsculas, redondea los precios a 9 decimales y establece `status=OPEN`, `openAt`, `createdAt` y `pnl=0`. La cuenta indicada debe tener un proveedor soportado.
 
 ### 4.4 Consultar un trade
 
@@ -167,8 +171,9 @@ Las pruebas unitarias están en:
 
 Cubren:
 
-- Creación con cuenta activa.
-- Creación automática de cuenta principal.
+- Creación con una cuenta que tiene proveedor.
+- Selección de la primera cuenta activa con proveedor cuando no se indica `accountId`.
+- Rechazo de cuentas sin proveedor.
 - Cierre completo.
 - Cierre parcial.
 - Acumulación de P&L.
@@ -176,6 +181,8 @@ Cubren:
 - Rechazo de cantidades inválidas.
 - Edición independiente del estado de cierre.
 - Borrado lógico mediante `deletedAt`.
+
+La suite completa incluye además `AccountServiceTest`, `AccountProviderBackfillTest`, `ApiExceptionHandlerTest` y las pruebas de importación en `service/tradeimport/`.
 
 Para ejecutarlas junto con toda la suite:
 
